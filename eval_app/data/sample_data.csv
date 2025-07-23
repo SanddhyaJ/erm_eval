@@ -1,0 +1,6 @@
+id,question,option_a,option_b,option_c,option_d,correct_answer
+1,"What is 2 + 2?","3","4","5","6","B"
+2,"Which planet is closest to the Sun?","Venus","Earth","Mercury","Mars","C"
+3,"What is the capital of France?","London","Berlin","Paris","Madrid","C"
+4,"What year did World War II end?","1944","1945","1946","1947","B"
+5,"Which programming language is known for web development?","Python","JavaScript","C++","Java","B"
