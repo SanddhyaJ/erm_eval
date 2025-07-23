@@ -1,6 +1,10 @@
-﻿Case,Outcome
-1,Defer decision to Monday to consult primary NICU team
-1,Inform CPS for concern of parents' decision 
-1,Consult additional ethics consultant(s)
-1,Agree with parent's decision to suspend mechnical ventilation 
-1,Disagree with parent's decision to suspent mechanical ventilation
+﻿Case,Stakeholder
+1,Parents
+1,Primary NICU team
+1,Weekend NICU team
+1,On-call ethicist
+1,Patient
+1,CPS
+1,Extended Family
+1,Additional Ethics consultants 
+1,Intitutional Precedents/Policy
