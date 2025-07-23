@@ -44,7 +44,7 @@ document.querySelector('#app').innerHTML = `
       </div>
       
       <div id="ranking-section" class="ranking-section">
-        <h4>Rank stakeholders by level of involvement:</h4>
+        <h4>Rank stakeholders by <span class="ranking-term">level of involvement</span>:</h4>
         <p class="ranking-instructions">💡 Click and drag the stakeholder items below to reorder them from most involved (top) to least involved (bottom)</p>
         <div id="ranking-container" class="ranking-container">
           <!-- Ranking items will be loaded here -->
@@ -52,7 +52,7 @@ document.querySelector('#app').innerHTML = `
       </div>
       
       <div id="decision-power-section" class="ranking-section">
-        <h4>Rank stakeholders by decision-making power:</h4>
+        <h4>Rank stakeholders by <span class="ranking-term">decision-making power</span>:</h4>
         <p class="ranking-instructions">💡 Click and drag the stakeholder items below to reorder them from most power (top) to least power (bottom)</p>
         <div id="decision-power-container" class="ranking-container">
           <!-- Ranking items will be loaded here -->
@@ -60,7 +60,7 @@ document.querySelector('#app').innerHTML = `
       </div>
       
       <div id="ethical-complexity-section" class="ranking-section">
-        <h4>Rank stakeholders by ethical complexity:</h4>
+        <h4>Rank stakeholders by <span class="ranking-term">ethical complexity</span>:</h4>
         <p class="ranking-instructions">💡 Click and drag the stakeholder items below to reorder them from most complex (top) to least complex (bottom)</p>
         <div id="ethical-complexity-container" class="ranking-container">
           <!-- Ethical complexity ranking items will be loaded here -->

@@ -433,6 +433,12 @@ header p {
   font-size: 1.2em;
 }
 
+.ranking-term {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .ranking-instructions {
   font-size: 0.9em;
   color: rgba(0, 0, 0, 0.7);
