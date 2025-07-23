@@ -115,13 +115,12 @@ document.querySelector('#app').innerHTML = `
           rows="4">
         </textarea>
       </div>
-      
-
-      <div id="completion-section" class="completion-section" style="display: none;">
-        <h2>Evaluation Complete!</h2>
-        <p>Thank you for completing the evaluation.</p>
-        <button id="download-btn" class="download-btn">Download Results</button>
-      </div>
+    </div>
+    
+    <div id="completion-section" class="completion-section" style="display: none;">
+      <h2>Evaluation Complete!</h2>
+      <p>Thank you for completing the evaluation.</p>
+      <button id="download-btn" class="download-btn">Download Results</button>
     </div>
   </div>
 `

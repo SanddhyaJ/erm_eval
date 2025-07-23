@@ -171,28 +171,41 @@ header p {
 
 .completion-section {
   text-align: center;
-  padding: 3rem 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  margin: 2rem auto;
+  max-width: 600px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .completion-section h2 {
   color: #646cff;
   margin-bottom: 1rem;
+  font-size: 2.5em;
+  font-weight: 600;
+}
+
+.completion-section p {
+  font-size: 1.2em;
+  margin-bottom: 2rem;
+  color: #888;
 }
 
 .download-btn {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.8em 2em;
-  font-size: 1.1em;
-  font-weight: 500;
+  padding: 1em 2.5em;
+  font-size: 1.2em;
+  font-weight: 600;
   font-family: inherit;
   background: linear-gradient(90deg, #646cff, #535bf2);
   color: white;
   cursor: pointer;
   transition: all 0.25s;
   margin-top: 1rem;
+  box-shadow: 0 4px 16px rgba(100, 108, 255, 0.2);
 }
 
 .download-btn:hover {

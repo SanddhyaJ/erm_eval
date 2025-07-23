@@ -180,6 +180,9 @@ ${summaryText}
     const outcomesResponses = this.outcomesResponses.get(caseId) || new Set()
     const outcomesData = Array.from(outcomesResponses).join(' | ')
 
+    // Get additional comments
+    const additionalComments = document.getElementById('additional-comments')?.value || ''
+
     const response = {
       case_id: caseId,
       case_title: caseData.Title,
@@ -190,6 +193,7 @@ ${summaryText}
       ethical_complexity_ranking: ethicalComplexityRanking,
       concerns_data: concernsData,
       outcomes_data: outcomesData,
+      additional_comments: additionalComments,
       timestamp: new Date().toISOString()
     }
 
@@ -217,8 +221,46 @@ ${summaryText}
   }
 
   completeEvaluation() {
-    document.getElementById('evaluation-content').style.display = 'none'
-    document.getElementById('completion-section').style.display = 'block'
+    console.log('Completing evaluation...')
+    const evaluationContainer = document.getElementById('evaluation-container')
+    const completionSection = document.getElementById('completion-section')
+    
+    console.log('Evaluation container element:', evaluationContainer)
+    console.log('Completion section element:', completionSection)
+    
+    if (evaluationContainer) {
+      evaluationContainer.style.display = 'none'
+      console.log('Hidden evaluation container')
+    }
+    
+    if (completionSection) {
+      completionSection.style.display = 'block'
+      completionSection.style.visibility = 'visible'
+      completionSection.style.opacity = '1'
+      completionSection.style.position = 'relative'
+      completionSection.style.zIndex = '9999'
+      
+      // Check position and dimensions
+      const rect = completionSection.getBoundingClientRect()
+      console.log('Completion section position and size:', {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        bottom: rect.bottom,
+        right: rect.right
+      })
+      
+      // Scroll to the completion section
+      completionSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      
+      console.log('Showing completion section')
+      console.log('Completion section styles:', window.getComputedStyle(completionSection))
+    } else {
+      console.error('Completion section not found!')
+    }
+    
+    console.log('Completion section should now be visible')
   }
 
   downloadResults() {
@@ -238,7 +280,7 @@ ${summaryText}
   }
 
   createResultsCSV(results) {
-    const headers = ['case_id', 'case_title', 'case_category', 'selected_stakeholders', 'stakeholder_ranking', 'decision_power_ranking', 'ethical_complexity_ranking', 'concerns_data', 'outcomes_data', 'timestamp']
+    const headers = ['case_id', 'case_title', 'case_category', 'selected_stakeholders', 'stakeholder_ranking', 'decision_power_ranking', 'ethical_complexity_ranking', 'concerns_data', 'outcomes_data', 'additional_comments', 'timestamp']
     const rows = [headers.join(',')]
     
     results.responses.forEach(response => {
@@ -252,6 +294,7 @@ ${summaryText}
         `"${response.ethical_complexity_ranking.join('; ')}"`,
         `"${response.concerns_data}"`,
         `"${response.outcomes_data}"`,
+        `"${(response.additional_comments || '').replace(/"/g, '""')}"`,
         response.timestamp
       ]
       rows.push(row.join(','))
