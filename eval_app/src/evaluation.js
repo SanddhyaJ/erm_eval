@@ -3,6 +3,7 @@ class EvaluationApp {
     this.questions = []
     this.stakeholders = []
     this.concerns = []
+    this.outcomes = []
     this.currentQuestionIndex = 0
     this.responses = []
     this.startTime = new Date()
@@ -11,6 +12,7 @@ class EvaluationApp {
     this.decisionPowerRankings = new Map() // Store decision power rankings per case
     this.ethicalComplexityRankings = new Map() // Store ethical complexity rankings per case
     this.concernsResponses = new Map() // Store concerns responses per case
+    this.outcomesResponses = new Map() // Store outcomes responses per case
   }
 
   async loadCSVData() {
@@ -29,6 +31,11 @@ class EvaluationApp {
       const concernsResponse = await fetch('/data/concerns.csv')
       const concernsText = await concernsResponse.text()
       this.concerns = this.parseCSV(concernsText)
+      
+      // Load outcomes data
+      const outcomesResponse = await fetch('/data/outcomes.csv')
+      const outcomesText = await outcomesResponse.text()
+      this.outcomes = this.parseCSV(outcomesText)
       
       return true
     } catch (error) {
@@ -126,6 +133,7 @@ ${summaryText}
     this.updateSideMenu()
     this.renderStakeholders()
     this.renderConcerns()
+    this.renderOutcomes()
     this.renderRanking()
     this.renderDecisionPowerRanking()
     this.renderEthicalComplexityRanking()
@@ -168,6 +176,10 @@ ${summaryText}
       return `${concern}: ${response.isConcern ? 'Yes' : 'No'}${response.isConcern ? ` (Severity: ${this.getSeverityText(response.severity)})` : ''}`
     }).join(' | ')
 
+    // Get outcomes responses for this case
+    const outcomesResponses = this.outcomesResponses.get(caseId) || new Set()
+    const outcomesData = Array.from(outcomesResponses).join(' | ')
+
     const response = {
       case_id: caseId,
       case_title: caseData.Title,
@@ -177,6 +189,7 @@ ${summaryText}
       decision_power_ranking: decisionPowerRanking,
       ethical_complexity_ranking: ethicalComplexityRanking,
       concerns_data: concernsData,
+      outcomes_data: outcomesData,
       timestamp: new Date().toISOString()
     }
 
@@ -225,7 +238,7 @@ ${summaryText}
   }
 
   createResultsCSV(results) {
-    const headers = ['case_id', 'case_title', 'case_category', 'selected_stakeholders', 'stakeholder_ranking', 'decision_power_ranking', 'ethical_complexity_ranking', 'concerns_data', 'timestamp']
+    const headers = ['case_id', 'case_title', 'case_category', 'selected_stakeholders', 'stakeholder_ranking', 'decision_power_ranking', 'ethical_complexity_ranking', 'concerns_data', 'outcomes_data', 'timestamp']
     const rows = [headers.join(',')]
     
     results.responses.forEach(response => {
@@ -238,6 +251,7 @@ ${summaryText}
         `"${response.decision_power_ranking.join('; ')}"`,
         `"${response.ethical_complexity_ranking.join('; ')}"`,
         `"${response.concerns_data}"`,
+        `"${response.outcomes_data}"`,
         response.timestamp
       ]
       rows.push(row.join(','))
@@ -934,6 +948,82 @@ ${summaryText}
         const response = concernsResponses.get(concernDescription) || { isConcern: null, severity: 1 }
         response.severity = severity
         concernsResponses.set(concernDescription, response)
+      })
+    })
+  }
+
+  renderOutcomes() {
+    const caseData = this.questions[this.currentQuestionIndex]
+    const outcomesContainer = document.getElementById('outcomes-section')
+    const caseId = caseData['Case']
+    
+    // Get outcomes for this case
+    const caseOutcomes = this.outcomes.filter(outcome => 
+      outcome.Case === caseId
+    )
+    
+    // Get previously selected outcomes for this case
+    const selectedOutcomes = this.outcomesResponses.get(caseId) || new Set()
+    
+    if (caseOutcomes.length === 0) {
+      outcomesContainer.style.display = 'none'
+      return
+    }
+    
+    outcomesContainer.style.display = 'block'
+    
+    const outcomesHTML = caseOutcomes.map((outcome, index) => {
+      const outcomeId = `outcome-${index}`
+      const isSelected = selectedOutcomes.has(outcome.Outcome)
+      
+      return `
+        <label class="outcome-option ${isSelected ? 'selected' : ''}">
+          <input type="checkbox" 
+                 name="outcomes" 
+                 value="${outcome.Outcome}" 
+                 id="${outcomeId}"
+                 ${isSelected ? 'checked' : ''}>
+          <span class="outcome-text">${outcome.Outcome}</span>
+          <span class="outcome-checkmark">✓</span>
+        </label>
+      `
+    }).join('')
+    
+    outcomesContainer.innerHTML = `
+      <h4>Potential Outcomes</h4>
+      <p class="outcomes-instructions">💡 Select all outcomes that you believe are appropriate for this case</p>
+      <div class="outcomes-list">
+        ${outcomesHTML}
+      </div>
+    `
+    
+    // Add event listeners
+    this.setupOutcomesListeners()
+  }
+
+  setupOutcomesListeners() {
+    const caseId = this.questions[this.currentQuestionIndex]['Case']
+    
+    // Get or create outcomes responses for this case
+    if (!this.outcomesResponses.has(caseId)) {
+      this.outcomesResponses.set(caseId, new Set())
+    }
+    const selectedOutcomes = this.outcomesResponses.get(caseId)
+    
+    // Checkbox listeners
+    document.querySelectorAll('.outcome-option input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const outcome = e.target.value
+        const isSelected = e.target.checked
+        const outcomeOption = e.target.closest('.outcome-option')
+        
+        if (isSelected) {
+          selectedOutcomes.add(outcome)
+          outcomeOption.classList.add('selected')
+        } else {
+          selectedOutcomes.delete(outcome)
+          outcomeOption.classList.remove('selected')
+        }
       })
     })
   }

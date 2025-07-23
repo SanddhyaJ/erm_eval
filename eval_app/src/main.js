@@ -68,6 +68,10 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       
+      <div id="outcomes-section" class="outcomes-section" style="display: none;">
+        <!-- Outcomes will be loaded here -->
+      </div>
+      
       <div id="concerns-section" class="concerns-section" style="display: none;">
         <!-- Concerns will be loaded here -->
       </div>

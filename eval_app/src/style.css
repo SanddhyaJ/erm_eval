@@ -718,6 +718,98 @@ header p {
   font-weight: 700;
 }
 
+/* Outcomes Section */
+.outcomes-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.outcomes-section h4 {
+  color: #646cff;
+  margin-bottom: 0.5rem;
+  font-size: 1.2em;
+}
+
+.outcomes-instructions {
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background: rgba(100, 108, 255, 0.1);
+  border-left: 3px solid #646cff;
+  border-radius: 4px;
+}
+
+.outcomes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.outcome-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  position: relative;
+}
+
+.outcome-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(100, 108, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.2);
+}
+
+.outcome-option input[type="checkbox"] {
+  display: none;
+}
+
+.outcome-text {
+  flex: 1;
+  font-size: 1em;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  transition: color 0.3s ease;
+}
+
+.outcome-checkmark {
+  font-size: 1.2em;
+  color: transparent;
+  transition: all 0.3s ease;
+  font-weight: bold;
+}
+
+.outcome-option.selected {
+  background: linear-gradient(135deg, rgba(100, 108, 255, 0.2), rgba(100, 108, 255, 0.1));
+  border-color: #646cff;
+  box-shadow: 0 4px 16px rgba(100, 108, 255, 0.3);
+}
+
+.outcome-option.selected .outcome-text {
+  color: white;
+  font-weight: 500;
+}
+
+.outcome-option.selected .outcome-checkmark {
+  color: #646cff;
+  background: rgba(100, 108, 255, 0.2);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1em;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -744,7 +836,8 @@ header p {
   }
   
   .case-summary {
-    color: rgba(0, 0, 0, 0.8);
+    color: rgba(0, 0, 0, 0.9);
+    font-weight: 400;
   }
   
   .category-header:hover {
@@ -863,6 +956,32 @@ header p {
   
   .severity-label-text {
     color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .outcomes-section {
+    border-top-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .outcomes-instructions {
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .outcome-option {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .outcome-option:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(100, 108, 255, 0.5);
+  }
+  
+  .outcome-text {
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .outcome-option.selected .outcome-text {
+    color: rgba(0, 0, 0, 0.9);
   }
 }
 
