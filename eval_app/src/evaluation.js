@@ -2,6 +2,7 @@ class EvaluationApp {
   constructor() {
     this.questions = []
     this.stakeholders = []
+    this.concerns = []
     this.currentQuestionIndex = 0
     this.responses = []
     this.startTime = new Date()
@@ -9,6 +10,7 @@ class EvaluationApp {
     this.stakeholderRankings = new Map() // Store rankings per case
     this.decisionPowerRankings = new Map() // Store decision power rankings per case
     this.ethicalComplexityRankings = new Map() // Store ethical complexity rankings per case
+    this.concernsResponses = new Map() // Store concerns responses per case
   }
 
   async loadCSVData() {
@@ -22,6 +24,11 @@ class EvaluationApp {
       const stakeholdersResponse = await fetch('/data/stakeholders.csv')
       const stakeholdersText = await stakeholdersResponse.text()
       this.stakeholders = this.parseCSV(stakeholdersText)
+      
+      // Load concerns data
+      const concernsResponse = await fetch('/data/concerns.csv')
+      const concernsText = await concernsResponse.text()
+      this.concerns = this.parseCSV(concernsText)
       
       return true
     } catch (error) {
@@ -118,6 +125,7 @@ ${summaryText}
     this.updateNavigation()
     this.updateSideMenu()
     this.renderStakeholders()
+    this.renderConcerns()
     this.renderRanking()
     this.renderDecisionPowerRanking()
     this.renderEthicalComplexityRanking()
@@ -154,6 +162,12 @@ ${summaryText}
     const decisionPowerRanking = this.decisionPowerRankings.get(caseId) || []
     const ethicalComplexityRanking = this.ethicalComplexityRankings.get(caseId) || []
 
+    // Get concerns responses for this case
+    const concernsResponses = this.concernsResponses.get(caseId) || new Map()
+    const concernsData = Array.from(concernsResponses.entries()).map(([concern, response]) => {
+      return `${concern}: ${response.isConcern ? 'Yes' : 'No'}${response.isConcern ? ` (Severity: ${this.getSeverityText(response.severity)})` : ''}`
+    }).join(' | ')
+
     const response = {
       case_id: caseId,
       case_title: caseData.Title,
@@ -162,6 +176,7 @@ ${summaryText}
       stakeholder_ranking: stakeholderRanking,
       decision_power_ranking: decisionPowerRanking,
       ethical_complexity_ranking: ethicalComplexityRanking,
+      concerns_data: concernsData,
       timestamp: new Date().toISOString()
     }
 
@@ -210,7 +225,7 @@ ${summaryText}
   }
 
   createResultsCSV(results) {
-    const headers = ['case_id', 'case_title', 'case_category', 'selected_stakeholders', 'stakeholder_ranking', 'decision_power_ranking', 'ethical_complexity_ranking', 'timestamp']
+    const headers = ['case_id', 'case_title', 'case_category', 'selected_stakeholders', 'stakeholder_ranking', 'decision_power_ranking', 'ethical_complexity_ranking', 'concerns_data', 'timestamp']
     const rows = [headers.join(',')]
     
     results.responses.forEach(response => {
@@ -222,6 +237,7 @@ ${summaryText}
         `"${response.stakeholder_ranking.join('; ')}"`,
         `"${response.decision_power_ranking.join('; ')}"`,
         `"${response.ethical_complexity_ranking.join('; ')}"`,
+        `"${response.concerns_data}"`,
         response.timestamp
       ]
       rows.push(row.join(','))
@@ -779,6 +795,147 @@ ${summaryText}
         return closest
       }
     }, { offset: Number.NEGATIVE_INFINITY }).element
+  }
+
+  renderConcerns() {
+    const caseData = this.questions[this.currentQuestionIndex]
+    const concernsContainer = document.getElementById('concerns-section')
+    const caseId = caseData['Case']
+    
+    // Get concerns for this case
+    const caseConcerns = this.concerns.filter(concern => 
+      concern.Case === caseId
+    )
+    
+    // Get previously stored concerns responses for this case
+    const concernsResponses = this.concernsResponses.get(caseId) || new Map()
+    
+    if (caseConcerns.length === 0) {
+      concernsContainer.style.display = 'none'
+      return
+    }
+    
+    concernsContainer.style.display = 'block'
+    
+    const concernsHTML = caseConcerns.map((concern, index) => {
+      const concernId = `concern-${index}`
+      const response = concernsResponses.get(concern.Description) || { isConcern: null, severity: 1 }
+      
+      return `
+        <div class="concern-item" data-concern="${concern.Description}">
+          <div class="concern-description">
+            <p>${concern.Description}</p>
+          </div>
+          
+          <div class="concern-question">
+            <label class="concern-label">Do you believe this is a concern?</label>
+            <div class="concern-choice">
+              <label class="concern-option">
+                <input type="radio" 
+                       name="${concernId}" 
+                       value="yes" 
+                       ${response.isConcern === true ? 'checked' : ''}>
+                <span>Yes</span>
+              </label>
+              <label class="concern-option">
+                <input type="radio" 
+                       name="${concernId}" 
+                       value="no" 
+                       ${response.isConcern === false ? 'checked' : ''}>
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="severity-section ${response.isConcern === true ? '' : 'hidden'}">
+            <label class="severity-label">How severe is this concern?</label>
+            <div class="severity-slider-container">
+              <input type="range" 
+                     class="severity-slider" 
+                     min="1" 
+                     max="3" 
+                     value="${response.severity}" 
+                     data-concern="${concern.Description}">
+              <div class="severity-labels">
+                <span class="severity-label-text">Mild</span>
+                <span class="severity-label-text">Moderate</span>
+                <span class="severity-label-text">Severe</span>
+              </div>
+              <div class="severity-value">Current: <span class="severity-text">${this.getSeverityText(response.severity)}</span></div>
+            </div>
+          </div>
+        </div>
+      `
+    }).join('')
+    
+    concernsContainer.innerHTML = `
+      <h4>Ethical Concerns Assessment</h4>
+      <p class="concerns-instructions">💡 Please evaluate each potential concern and rate its severity if applicable</p>
+      <div class="concerns-list">
+        ${concernsHTML}
+      </div>
+    `
+    
+    // Add event listeners
+    this.setupConcernsListeners()
+  }
+
+  getSeverityText(value) {
+    switch(parseInt(value)) {
+      case 1: return 'Mild'
+      case 2: return 'Moderate' 
+      case 3: return 'Severe'
+      default: return 'Mild'
+    }
+  }
+
+  setupConcernsListeners() {
+    const caseId = this.questions[this.currentQuestionIndex]['Case']
+    
+    // Get or create concerns responses for this case
+    if (!this.concernsResponses.has(caseId)) {
+      this.concernsResponses.set(caseId, new Map())
+    }
+    const concernsResponses = this.concernsResponses.get(caseId)
+    
+    // Radio button listeners
+    document.querySelectorAll('.concern-item input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const concernItem = e.target.closest('.concern-item')
+        const concernDescription = concernItem.dataset.concern
+        const isConcern = e.target.value === 'yes'
+        const severitySection = concernItem.querySelector('.severity-section')
+        
+        // Get existing response or create new one
+        const response = concernsResponses.get(concernDescription) || { isConcern: null, severity: 1 }
+        response.isConcern = isConcern
+        concernsResponses.set(concernDescription, response)
+        
+        // Show/hide severity section
+        if (isConcern) {
+          severitySection.classList.remove('hidden')
+        } else {
+          severitySection.classList.add('hidden')
+        }
+      })
+    })
+    
+    // Slider listeners
+    document.querySelectorAll('.severity-slider').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const concernDescription = e.target.dataset.concern
+        const severity = parseInt(e.target.value)
+        const severityText = e.target.closest('.concern-item').querySelector('.severity-text')
+        
+        // Update display
+        severityText.textContent = this.getSeverityText(severity)
+        
+        // Store response
+        const response = concernsResponses.get(concernDescription) || { isConcern: null, severity: 1 }
+        response.severity = severity
+        concernsResponses.set(concernDescription, response)
+      })
+    })
   }
 }
 

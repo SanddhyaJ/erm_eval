@@ -541,6 +541,183 @@ header p {
   cursor: grabbing;
 }
 
+/* Concerns Section */
+.concerns-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.concerns-section h4 {
+  color: #646cff;
+  margin-bottom: 0.5rem;
+  font-size: 1.2em;
+}
+
+.concerns-instructions {
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background: rgba(100, 108, 255, 0.1);
+  border-left: 3px solid #646cff;
+  border-radius: 4px;
+}
+
+.concerns-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.concern-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.3s ease;
+}
+
+.concern-item:hover {
+  border-color: rgba(100, 108, 255, 0.3);
+}
+
+.concern-description p {
+  margin: 0 0 1rem 0;
+  font-size: 1em;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.concern-label {
+  display: block;
+  font-weight: 600;
+  color: #646cff;
+  margin-bottom: 0.5rem;
+  font-size: 0.95em;
+}
+
+.concern-choice {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.concern-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.concern-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(100, 108, 255, 0.5);
+}
+
+.concern-option:has(input:checked) {
+  background: rgba(100, 108, 255, 0.2);
+  border-color: #646cff;
+}
+
+.concern-option input[type="radio"] {
+  margin: 0;
+  accent-color: #646cff;
+}
+
+.concern-option span {
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.severity-section {
+  transition: all 0.3s ease;
+}
+
+.severity-section.hidden {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.severity-label {
+  display: block;
+  font-weight: 600;
+  color: #646cff;
+  margin-bottom: 0.75rem;
+  font-size: 0.95em;
+}
+
+.severity-slider-container {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.severity-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  margin-bottom: 0.75rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.severity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #646cff, #535bf2);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(100, 108, 255, 0.4);
+}
+
+.severity-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #646cff, #535bf2);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(100, 108, 255, 0.4);
+}
+
+.severity-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.severity-label-text {
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.severity-value {
+  text-align: center;
+  font-size: 0.9em;
+  color: #646cff;
+  font-weight: 600;
+}
+
+.severity-text {
+  color: #646cff;
+  font-weight: 700;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -642,6 +819,50 @@ header p {
   
   .drag-handle {
     color: rgba(0, 0, 0, 0.4);
+  }
+  
+  .concerns-section {
+    border-top-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .concerns-instructions {
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .concern-item {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .concern-item:hover {
+    border-color: rgba(100, 108, 255, 0.3);
+  }
+  
+  .concern-description p {
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .concern-option {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .concern-option:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(100, 108, 255, 0.5);
+  }
+  
+  .severity-slider-container {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .severity-slider {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  
+  .severity-label-text {
+    color: rgba(0, 0, 0, 0.6);
   }
 }
 

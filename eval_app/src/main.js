@@ -43,6 +43,7 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       
+
       <div id="ranking-section" class="ranking-section">
         <h4>Rank stakeholders by <span class="ranking-term">level of involvement</span>:</h4>
         <p class="ranking-instructions">💡 Click and drag the stakeholder items below to reorder them from most involved (top) to least involved (bottom)</p>
@@ -67,6 +68,10 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       
+      <div id="concerns-section" class="concerns-section" style="display: none;">
+        <!-- Concerns will be loaded here -->
+      </div>
+
       <div id="completion-section" class="completion-section" style="display: none;">
         <h2>Evaluation Complete!</h2>
         <p>Thank you for completing the evaluation.</p>
