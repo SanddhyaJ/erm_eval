@@ -18,22 +18,22 @@ class EvaluationApp {
   async loadCSVData() {
     try {
       // Load overview data
-      const overviewResponse = await fetch('/data/overview.csv')
+      const overviewResponse = await fetch('public/data/overview.csv')
       const overviewText = await overviewResponse.text()
       this.questions = this.parseCSV(overviewText)
       
       // Load stakeholders data
-      const stakeholdersResponse = await fetch('/data/stakeholders.csv')
+      const stakeholdersResponse = await fetch('/public/data/stakeholders.csv')
       const stakeholdersText = await stakeholdersResponse.text()
       this.stakeholders = this.parseCSV(stakeholdersText)
       
       // Load concerns data
-      const concernsResponse = await fetch('/data/concerns.csv')
+      const concernsResponse = await fetch('/public/data/concerns.csv')
       const concernsText = await concernsResponse.text()
       this.concerns = this.parseCSV(concernsText)
       
       // Load outcomes data
-      const outcomesResponse = await fetch('/data/outcomes.csv')
+      const outcomesResponse = await fetch('/public/data/outcomes.csv')
       const outcomesText = await outcomesResponse.text()
       this.outcomes = this.parseCSV(outcomesText)
       
