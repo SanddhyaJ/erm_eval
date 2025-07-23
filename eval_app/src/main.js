@@ -32,8 +32,15 @@ document.querySelector('#app').innerHTML = `
       
       <div class="navigation">
         <button id="prev-btn" class="nav-btn" disabled>Previous</button>
-        <span id="question-counter">Question 1 of 5</span>
+        <span id="question-counter">Case 1 of 1</span>
         <button id="next-btn" class="nav-btn">Next</button>
+      </div>
+      
+      <div id="stakeholders-section" class="stakeholders-section">
+        <h4>Select stakeholders involved in this case:</h4>
+        <div id="stakeholders-options" class="stakeholders-options">
+          <!-- Stakeholder options will be loaded here -->
+        </div>
       </div>
       
       <div id="completion-section" class="completion-section" style="display: none;">

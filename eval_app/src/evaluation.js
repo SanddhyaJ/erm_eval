@@ -1,6 +1,7 @@
 class EvaluationApp {
   constructor() {
     this.questions = []
+    this.stakeholders = []
     this.currentQuestionIndex = 0
     this.responses = []
     this.startTime = new Date()
@@ -8,9 +9,16 @@ class EvaluationApp {
 
   async loadCSVData() {
     try {
-      const response = await fetch('/data/sample_data.csv')
-      const csvText = await response.text()
-      this.questions = this.parseCSV(csvText)
+      // Load overview data
+      const overviewResponse = await fetch('/data/overview.csv')
+      const overviewText = await overviewResponse.text()
+      this.questions = this.parseCSV(overviewText)
+      
+      // Load stakeholders data
+      const stakeholdersResponse = await fetch('/data/stakeholders.csv')
+      const stakeholdersText = await stakeholdersResponse.text()
+      this.stakeholders = this.parseCSV(stakeholdersText)
+      
       return true
     } catch (error) {
       console.error('Error loading CSV data:', error)
@@ -19,17 +27,49 @@ class EvaluationApp {
   }
 
   parseCSV(csvText) {
-    const lines = csvText.trim().split('\n')
-    const headers = lines[0].split(',').map(header => header.replace(/"/g, ''))
+    const result = []
+    const lines = csvText.split('\n')
+    const headers = this.parseCSVLine(lines[0])
     
-    return lines.slice(1).map(line => {
-      const values = this.parseCSVLine(line)
-      const question = {}
-      headers.forEach((header, index) => {
-        question[header] = values[index] || ''
-      })
-      return question
-    })
+    let i = 1
+    while (i < lines.length) {
+      if (lines[i].trim() === '') {
+        i++
+        continue
+      }
+      
+      const row = this.parseCSVRow(lines, i)
+      if (row.values.length > 0) {
+        const rowData = {}
+        headers.forEach((header, index) => {
+          rowData[header] = row.values[index] || ''
+        })
+        result.push(rowData)
+      }
+      i = row.nextIndex
+    }
+    
+    return result
+  }
+
+  parseCSVRow(lines, startIndex) {
+    let currentLine = startIndex
+    let fullRow = lines[currentLine]
+    
+    // Check if this row has unclosed quotes
+    let quoteCount = (fullRow.match(/"/g) || []).length
+    
+    // If odd number of quotes, we need to continue to next lines
+    while (quoteCount % 2 !== 0 && currentLine + 1 < lines.length) {
+      currentLine++
+      fullRow += '\n' + lines[currentLine]
+      quoteCount += (lines[currentLine].match(/"/g) || []).length
+    }
+    
+    return {
+      values: this.parseCSVLine(fullRow),
+      nextIndex: currentLine + 1
+    }
   }
 
   parseCSVLine(line) {
@@ -43,64 +83,45 @@ class EvaluationApp {
       if (char === '"') {
         inQuotes = !inQuotes
       } else if (char === ',' && !inQuotes) {
-        result.push(current.trim())
+        result.push(current.trim().replace(/^"|"$/g, ''))
         current = ''
       } else {
         current += char
       }
     }
     
-    result.push(current.trim())
-    return result.map(value => value.replace(/"/g, ''))
+    result.push(current.trim().replace(/^"|"$/g, ''))
+    return result
   }
 
   renderQuestion() {
-    const question = this.questions[this.currentQuestionIndex]
+    const caseData = this.questions[this.currentQuestionIndex]
     const container = document.getElementById('question-container')
     
+    // Ensure we have the summary content and format it with proper line breaks
+    const summaryText = (caseData.Summary || '').replace(/\n/g, '<br>')
+    
     container.innerHTML = `
-      <div class="question">
-        <h3>Question ${this.currentQuestionIndex + 1}</h3>
-        <p class="question-text">${question.question}</p>
-        
-        <div class="options">
-          <label class="option">
-            <input type="radio" name="answer" value="A">
-            <span>A) ${question.option_a}</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="answer" value="B">
-            <span>B) ${question.option_b}</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="answer" value="C">
-            <span>C) ${question.option_c}</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="answer" value="D">
-            <span>D) ${question.option_d}</span>
-          </label>
+      <div class="case-description">
+        <h3>Case ${caseData['Case']}: ${caseData.Title}</h3>
+        <div class="case-summary">
+${summaryText}
         </div>
       </div>
     `
 
-    // Restore previous answer if it exists
-    const previousResponse = this.responses[this.currentQuestionIndex]
-    if (previousResponse) {
-      const radio = container.querySelector(`input[value="${previousResponse.selected_answer}"]`)
-      if (radio) radio.checked = true
-    }
-
     this.updateProgress()
     this.updateNavigation()
     this.updateSideMenu()
+    this.renderStakeholders()
   }
 
   updateProgress() {
     const progress = ((this.currentQuestionIndex + 1) / this.questions.length) * 100
     document.getElementById('progress').style.width = `${progress}%`
+    const currentCase = this.questions[this.currentQuestionIndex]
     document.getElementById('question-counter').textContent = 
-      `Question ${this.currentQuestionIndex + 1} of ${this.questions.length}`
+      `Case ${currentCase['Case']} of ${this.questions.length}`
   }
 
   updateNavigation() {
@@ -209,18 +230,56 @@ class EvaluationApp {
   renderSideMenu() {
     const sideMenuContainer = document.getElementById('question-list')
     
-    sideMenuContainer.innerHTML = this.questions.map((question, index) => {
-      const isAnswered = this.responses[index] ? 'answered' : ''
-      const isCurrent = index === this.currentQuestionIndex ? 'current' : ''
-      const status = this.responses[index] ? '✓' : ''
+    // Group cases by category
+    const categorizedCases = this.questions.reduce((acc, caseData, index) => {
+      const category = caseData['Category'].trim()
+      if (!acc[category]) {
+        acc[category] = []
+      }
+      acc[category].push({ caseData, index })
+      return acc
+    }, {})
+
+    sideMenuContainer.innerHTML = Object.entries(categorizedCases).map(([category, cases]) => {
+      const categoryId = category.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
       
       return `
-        <div class="question-nav-item ${isAnswered} ${isCurrent}" data-question-index="${index}">
-          <span class="question-nav-number">Q${index + 1}</span>
-          <span class="question-nav-status">${status}</span>
+        <div class="category-section">
+          <div class="category-header" data-category="${categoryId}">
+            <span class="category-title">${category}</span>
+            <span class="category-toggle">▼</span>
+          </div>
+          <div class="category-content" id="category-${categoryId}">
+            ${cases.map(({ caseData, index }) => {
+              const isCurrent = index === this.currentQuestionIndex ? 'current' : ''
+              
+              return `
+                <div class="question-nav-item ${isCurrent}" data-question-index="${index}">
+                  <span class="question-nav-number">Case ${caseData['Case']}</span>
+                </div>
+              `
+            }).join('')}
+          </div>
         </div>
       `
     }).join('')
+
+    // Add click listeners to category headers for collapsing/expanding
+    sideMenuContainer.querySelectorAll('.category-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        const categoryId = e.currentTarget.getAttribute('data-category')
+        const content = document.getElementById(`category-${categoryId}`)
+        const toggle = e.currentTarget.querySelector('.category-toggle')
+        
+        if (content.classList.contains('collapsed')) {
+          content.classList.remove('collapsed')
+          toggle.textContent = '▼'
+        } else {
+          content.classList.add('collapsed')
+          toggle.textContent = '▶'
+        }
+      })
+    })
 
     // Add click listeners to navigation items
     sideMenuContainer.querySelectorAll('.question-nav-item').forEach(item => {
@@ -246,23 +305,33 @@ class EvaluationApp {
     const items = document.querySelectorAll('.question-nav-item')
     
     items.forEach((item, index) => {
+      const itemIndex = parseInt(item.getAttribute('data-question-index'))
+      
       // Remove current class from all items
       item.classList.remove('current')
       
-      // Add current class to active question
-      if (index === this.currentQuestionIndex) {
+      // Add current class to active case
+      if (itemIndex === this.currentQuestionIndex) {
         item.classList.add('current')
       }
-      
-      // Update answered status
-      if (this.responses[index]) {
-        item.classList.add('answered')
-        item.querySelector('.question-nav-status').textContent = '✓'
-      } else {
-        item.classList.remove('answered')
-        item.querySelector('.question-nav-status').textContent = ''
-      }
     })
+  }
+
+  renderStakeholders() {
+    const caseData = this.questions[this.currentQuestionIndex]
+    const stakeholdersContainer = document.getElementById('stakeholders-options')
+    
+    // Get stakeholders for this case
+    const caseStakeholders = this.stakeholders.filter(stakeholder => 
+      stakeholder.Case === caseData['Case']
+    )
+    
+    stakeholdersContainer.innerHTML = caseStakeholders.map((stakeholder, index) => `
+      <label class="stakeholder-option">
+        <input type="checkbox" name="stakeholders" value="${stakeholder.Stakeholder}" id="stakeholder-${index}">
+        <span>${stakeholder.Stakeholder}</span>
+      </label>
+    `).join('')
   }
 }
 
