@@ -79,6 +79,7 @@ header p {
 }
 
 .question-container {
+  flex: 1;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   padding: 2rem;
@@ -204,6 +205,84 @@ header p {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+.main-content {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.side-menu {
+  min-width: 200px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1.5rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.side-menu h3 {
+  color: #646cff;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1em;
+}
+
+.question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.question-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.question-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.question-nav-item.current {
+  border-color: #646cff;
+  background: rgba(100, 108, 255, 0.1);
+}
+
+.question-nav-item.answered {
+  background: rgba(46, 160, 67, 0.1);
+  border-color: #2ea043;
+}
+
+.question-nav-item.answered.current {
+  border-color: #646cff;
+  background: rgba(100, 108, 255, 0.2);
+}
+
+.question-nav-number {
+  font-weight: 600;
+  margin-right: 0.5rem;
+  color: #646cff;
+}
+
+.question-nav-item.answered .question-nav-number {
+  color: #2ea043;
+}
+
+.question-nav-item.current .question-nav-number {
+  color: #646cff;
+}
+
+.question-nav-status {
+  margin-left: auto;
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -216,8 +295,17 @@ header p {
   }
   
   .question-container,
-  .completion-section {
+  .completion-section,
+  .side-menu {
     background: rgba(0, 0, 0, 0.05);
+  }
+  
+  .question-nav-item {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  .question-nav-item:hover {
+    background: rgba(0, 0, 0, 0.1);
   }
   
   .option {
@@ -242,5 +330,34 @@ header p {
   
   .loading {
     color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .side-menu {
+    position: static;
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .question-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .question-nav-item {
+    flex: 0 0 auto;
+    min-width: 60px;
+    justify-content: center;
+  }
+  
+  .question-nav-status {
+    display: none;
   }
 }

@@ -4,8 +4,8 @@ import { setupEvaluationApp } from './evaluation.js'
 document.querySelector('#app').innerHTML = `
   <div class="evaluation-container">
     <header>
-      <h1>Evaluation App</h1>
-      <p>Complete the evaluation questions below</p>
+      <h1>Complex Ethical Case Evaluation</h1>
+      <p>Please complete the questions for the respective case below.</p>
     </header>
     
     <div id="loading" class="loading">
@@ -17,8 +17,17 @@ document.querySelector('#app').innerHTML = `
         <div id="progress" class="progress"></div>
       </div>
       
-      <div id="question-container" class="question-container">
-        <!-- Questions will be loaded here -->
+      <div class="main-content">
+        <div id="side-menu" class="side-menu">
+          <h3>Questions</h3>
+          <div id="question-list" class="question-list">
+            <!-- Question navigation items will be loaded here -->
+          </div>
+        </div>
+        
+        <div id="question-container" class="question-container">
+          <!-- Questions will be loaded here -->
+        </div>
       </div>
       
       <div class="navigation">

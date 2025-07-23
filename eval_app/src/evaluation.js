@@ -93,6 +93,7 @@ class EvaluationApp {
 
     this.updateProgress()
     this.updateNavigation()
+    this.updateSideMenu()
   }
 
   updateProgress() {
@@ -204,6 +205,65 @@ class EvaluationApp {
       document.body.removeChild(link)
     }
   }
+
+  renderSideMenu() {
+    const sideMenuContainer = document.getElementById('question-list')
+    
+    sideMenuContainer.innerHTML = this.questions.map((question, index) => {
+      const isAnswered = this.responses[index] ? 'answered' : ''
+      const isCurrent = index === this.currentQuestionIndex ? 'current' : ''
+      const status = this.responses[index] ? '✓' : ''
+      
+      return `
+        <div class="question-nav-item ${isAnswered} ${isCurrent}" data-question-index="${index}">
+          <span class="question-nav-number">Q${index + 1}</span>
+          <span class="question-nav-status">${status}</span>
+        </div>
+      `
+    }).join('')
+
+    // Add click listeners to navigation items
+    sideMenuContainer.querySelectorAll('.question-nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const questionIndex = parseInt(e.currentTarget.getAttribute('data-question-index'))
+        this.navigateToQuestion(questionIndex)
+      })
+    })
+  }
+
+  navigateToQuestion(index) {
+    if (index >= 0 && index < this.questions.length) {
+      // Save current response before navigating
+      this.saveCurrentResponse()
+      
+      this.currentQuestionIndex = index
+      this.renderQuestion()
+      this.updateSideMenu()
+    }
+  }
+
+  updateSideMenu() {
+    const items = document.querySelectorAll('.question-nav-item')
+    
+    items.forEach((item, index) => {
+      // Remove current class from all items
+      item.classList.remove('current')
+      
+      // Add current class to active question
+      if (index === this.currentQuestionIndex) {
+        item.classList.add('current')
+      }
+      
+      // Update answered status
+      if (this.responses[index]) {
+        item.classList.add('answered')
+        item.querySelector('.question-nav-status').textContent = '✓'
+      } else {
+        item.classList.remove('answered')
+        item.querySelector('.question-nav-status').textContent = ''
+      }
+    })
+  }
 }
 
 export async function setupEvaluationApp() {
@@ -225,6 +285,7 @@ export async function setupEvaluationApp() {
 
   // Render first question
   app.renderQuestion()
+  app.renderSideMenu()
 
   // Setup event listeners
   document.getElementById('next-btn').addEventListener('click', () => app.nextQuestion())
