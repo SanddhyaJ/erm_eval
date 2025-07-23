@@ -5,6 +5,10 @@ class EvaluationApp {
     this.currentQuestionIndex = 0
     this.responses = []
     this.startTime = new Date()
+    this.selectedStakeholders = new Map() // Store selections per case
+    this.stakeholderRankings = new Map() // Store rankings per case
+    this.decisionPowerRankings = new Map() // Store decision power rankings per case
+    this.ethicalComplexityRankings = new Map() // Store ethical complexity rankings per case
   }
 
   async loadCSVData() {
@@ -114,6 +118,9 @@ ${summaryText}
     this.updateNavigation()
     this.updateSideMenu()
     this.renderStakeholders()
+    this.renderRanking()
+    this.renderDecisionPowerRanking()
+    this.renderEthicalComplexityRanking()
   }
 
   updateProgress() {
@@ -138,14 +145,23 @@ ${summaryText}
   }
 
   saveCurrentResponse() {
-    const selectedOption = document.querySelector('input[name="answer"]:checked')
-    if (!selectedOption) return false
+    const caseData = this.questions[this.currentQuestionIndex]
+    const caseId = caseData['Case']
+    
+    // Get stakeholder selections and rankings
+    const selectedStakeholders = Array.from(this.selectedStakeholders.get(caseId) || [])
+    const stakeholderRanking = this.stakeholderRankings.get(caseId) || []
+    const decisionPowerRanking = this.decisionPowerRankings.get(caseId) || []
+    const ethicalComplexityRanking = this.ethicalComplexityRankings.get(caseId) || []
 
-    const question = this.questions[this.currentQuestionIndex]
     const response = {
-      question_id: question.id,
-      question_text: question.question,
-      selected_answer: selectedOption.value,
+      case_id: caseId,
+      case_title: caseData.Title,
+      case_category: caseData['Category'],
+      selected_stakeholders: selectedStakeholders,
+      stakeholder_ranking: stakeholderRanking,
+      decision_power_ranking: decisionPowerRanking,
+      ethical_complexity_ranking: ethicalComplexityRanking,
       timestamp: new Date().toISOString()
     }
 
@@ -154,10 +170,8 @@ ${summaryText}
   }
 
   nextQuestion() {
-    if (!this.saveCurrentResponse()) {
-      alert('Please select an answer before proceeding.')
-      return
-    }
+    // Always save current response (no validation needed for stakeholder selection)
+    this.saveCurrentResponse()
 
     if (this.currentQuestionIndex < this.questions.length - 1) {
       this.currentQuestionIndex++
@@ -196,14 +210,18 @@ ${summaryText}
   }
 
   createResultsCSV(results) {
-    const headers = ['question_id', 'question_text', 'selected_answer', 'timestamp']
+    const headers = ['case_id', 'case_title', 'case_category', 'selected_stakeholders', 'stakeholder_ranking', 'decision_power_ranking', 'ethical_complexity_ranking', 'timestamp']
     const rows = [headers.join(',')]
     
     results.responses.forEach(response => {
       const row = [
-        response.question_id,
-        `"${response.question_text}"`,
-        response.selected_answer,
+        response.case_id,
+        `"${response.case_title}"`,
+        `"${response.case_category}"`,
+        `"${response.selected_stakeholders.join('; ')}"`,
+        `"${response.stakeholder_ranking.join('; ')}"`,
+        `"${response.decision_power_ranking.join('; ')}"`,
+        `"${response.ethical_complexity_ranking.join('; ')}"`,
         response.timestamp
       ]
       rows.push(row.join(','))
@@ -320,18 +338,447 @@ ${summaryText}
   renderStakeholders() {
     const caseData = this.questions[this.currentQuestionIndex]
     const stakeholdersContainer = document.getElementById('stakeholders-options')
+    const caseId = caseData['Case']
     
     // Get stakeholders for this case
     const caseStakeholders = this.stakeholders.filter(stakeholder => 
-      stakeholder.Case === caseData['Case']
+      stakeholder.Case === caseId
     )
     
-    stakeholdersContainer.innerHTML = caseStakeholders.map((stakeholder, index) => `
-      <label class="stakeholder-option">
-        <input type="checkbox" name="stakeholders" value="${stakeholder.Stakeholder}" id="stakeholder-${index}">
-        <span>${stakeholder.Stakeholder}</span>
-      </label>
+    // Get previously selected stakeholders for this case
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    
+    stakeholdersContainer.innerHTML = caseStakeholders.map((stakeholder, index) => {
+      const isSelected = selectedStakeholders.has(stakeholder.Stakeholder)
+      return `
+        <label class="stakeholder-option ${isSelected ? 'selected' : ''}">
+          <input type="checkbox" 
+                 name="stakeholders" 
+                 value="${stakeholder.Stakeholder}" 
+                 id="stakeholder-${index}"
+                 ${isSelected ? 'checked' : ''}>
+          <span>${stakeholder.Stakeholder}</span>
+        </label>
+      `
+    }).join('')
+
+    // Add event listeners to stakeholder checkboxes
+    stakeholdersContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        this.handleStakeholderSelection(e)
+      })
+    })
+  }
+
+  handleStakeholderSelection(event) {
+    const caseId = this.questions[this.currentQuestionIndex]['Case']
+    const stakeholder = event.target.value
+    const isSelected = event.target.checked
+    
+    // Get or create the set of selected stakeholders for this case
+    if (!this.selectedStakeholders.has(caseId)) {
+      this.selectedStakeholders.set(caseId, new Set())
+    }
+    
+    const selectedStakeholders = this.selectedStakeholders.get(caseId)
+    
+    if (isSelected) {
+      selectedStakeholders.add(stakeholder)
+      event.target.closest('.stakeholder-option').classList.add('selected')
+    } else {
+      selectedStakeholders.delete(stakeholder)
+      event.target.closest('.stakeholder-option').classList.remove('selected')
+    }
+    
+    // Update the ranking display
+    this.renderRanking()
+    this.renderDecisionPowerRanking()
+    this.renderEthicalComplexityRanking()
+  }
+
+  renderRanking() {
+    const caseData = this.questions[this.currentQuestionIndex]
+    const rankingContainer = document.getElementById('ranking-container')
+    const caseId = caseData['Case']
+    
+    // Get selected stakeholders for this case, or all stakeholders if none selected
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    const caseStakeholders = this.stakeholders.filter(stakeholder => 
+      stakeholder.Case === caseId
+    ).map(s => s.Stakeholder)
+    
+    // Use selected stakeholders, or default to all if none selected
+    const stakeholdersToRank = selectedStakeholders.size > 0 
+      ? Array.from(selectedStakeholders)
+      : caseStakeholders
+    
+    // Get existing ranking for this case, or create default order
+    let ranking = this.stakeholderRankings.get(caseId) || stakeholdersToRank.slice()
+    
+    // Ensure ranking includes all current stakeholders and remove any that are no longer selected
+    const updatedRanking = []
+    
+    // First add existing ranked items that are still in stakeholdersToRank
+    ranking.forEach(stakeholder => {
+      if (stakeholdersToRank.includes(stakeholder)) {
+        updatedRanking.push(stakeholder)
+      }
+    })
+    
+    // Then add any new stakeholders that weren't in the previous ranking
+    stakeholdersToRank.forEach(stakeholder => {
+      if (!updatedRanking.includes(stakeholder)) {
+        updatedRanking.push(stakeholder)
+      }
+    })
+    
+    // Update the stored ranking
+    this.stakeholderRankings.set(caseId, updatedRanking)
+    ranking = updatedRanking
+    
+    rankingContainer.innerHTML = ranking.map((stakeholder, index) => `
+      <div class="ranking-item" draggable="true" data-stakeholder="${stakeholder}">
+        <span class="ranking-number">${index + 1}</span>
+        <span class="ranking-stakeholder">${stakeholder}</span>
+        <span class="drag-handle">⋮⋮</span>
+      </div>
     `).join('')
+
+    // Add drag and drop event listeners
+    this.setupDragAndDrop(rankingContainer)
+  }
+
+  renderDecisionPowerRanking() {
+    const caseData = this.questions[this.currentQuestionIndex]
+    const rankingContainer = document.getElementById('decision-power-container')
+    const caseId = caseData['Case']
+    
+    // Get selected stakeholders for this case, or all stakeholders if none selected
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    const caseStakeholders = this.stakeholders.filter(stakeholder => 
+      stakeholder.Case === caseId
+    ).map(s => s.Stakeholder)
+    
+    // Use selected stakeholders, or default to all if none selected
+    const stakeholdersToRank = selectedStakeholders.size > 0 
+      ? Array.from(selectedStakeholders)
+      : caseStakeholders
+    
+    // Get existing ranking for this case, or create default order
+    let ranking = this.decisionPowerRankings.get(caseId) || stakeholdersToRank.slice()
+    
+    // Ensure ranking includes all current stakeholders and remove any that are no longer selected
+    const updatedRanking = []
+    
+    // First add existing ranked items that are still in stakeholdersToRank
+    ranking.forEach(stakeholder => {
+      if (stakeholdersToRank.includes(stakeholder)) {
+        updatedRanking.push(stakeholder)
+      }
+    })
+    
+    // Then add any new stakeholders that weren't in the previous ranking
+    stakeholdersToRank.forEach(stakeholder => {
+      if (!updatedRanking.includes(stakeholder)) {
+        updatedRanking.push(stakeholder)
+      }
+    })
+    
+    // Update the stored ranking
+    this.decisionPowerRankings.set(caseId, updatedRanking)
+    ranking = updatedRanking
+    
+    rankingContainer.innerHTML = ranking.map((stakeholder, index) => `
+      <div class="ranking-item" draggable="true" data-stakeholder="${stakeholder}">
+        <span class="ranking-number">${index + 1}</span>
+        <span class="ranking-stakeholder">${stakeholder}</span>
+        <span class="drag-handle">⋮⋮</span>
+      </div>
+    `).join('')
+
+    // Add drag and drop event listeners
+    this.setupDecisionPowerDragAndDrop(rankingContainer)
+  }
+
+  renderEthicalComplexityRanking() {
+    const caseData = this.questions[this.currentQuestionIndex]
+    const rankingContainer = document.getElementById('ethical-complexity-container')
+    const caseId = caseData['Case']
+    
+    // Get selected stakeholders for this case, or all stakeholders if none selected
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    const caseStakeholders = this.stakeholders.filter(stakeholder => 
+      stakeholder.Case === caseId
+    ).map(s => s.Stakeholder)
+    
+    // Use selected stakeholders, or default to all if none selected
+    const stakeholdersToRank = selectedStakeholders.size > 0 
+      ? Array.from(selectedStakeholders)
+      : caseStakeholders
+    
+    // Get existing ranking for this case, or create default order
+    let ranking = this.ethicalComplexityRankings.get(caseId) || stakeholdersToRank.slice()
+    
+    // Ensure ranking includes all current stakeholders and remove any that are no longer selected
+    const updatedRanking = []
+    
+    // First add existing ranked items that are still in stakeholdersToRank
+    ranking.forEach(stakeholder => {
+      if (stakeholdersToRank.includes(stakeholder)) {
+        updatedRanking.push(stakeholder)
+      }
+    })
+    
+    // Then add any new stakeholders that weren't in the previous ranking
+    stakeholdersToRank.forEach(stakeholder => {
+      if (!updatedRanking.includes(stakeholder)) {
+        updatedRanking.push(stakeholder)
+      }
+    })
+    
+    // Update the stored ranking
+    this.ethicalComplexityRankings.set(caseId, updatedRanking)
+    ranking = updatedRanking
+    
+    rankingContainer.innerHTML = ranking.map((stakeholder, index) => `
+      <div class="ranking-item" draggable="true" data-stakeholder="${stakeholder}">
+        <span class="ranking-number">${index + 1}</span>
+        <span class="ranking-stakeholder">${stakeholder}</span>
+        <span class="drag-handle">⋮⋮</span>
+      </div>
+    `).join('')
+
+    // Add drag and drop event listeners
+    this.setupEthicalComplexityDragAndDrop(rankingContainer)
+  }
+
+  setupDecisionPowerDragAndDrop(container) {
+    let draggedElement = null
+
+    container.addEventListener('dragstart', (e) => {
+      if (e.target.classList.contains('ranking-item')) {
+        draggedElement = e.target
+        e.target.classList.add('dragging')
+        container.classList.add('drag-over')
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/html', e.target.outerHTML)
+      }
+    })
+
+    container.addEventListener('dragend', (e) => {
+      if (e.target.classList.contains('ranking-item')) {
+        e.target.classList.remove('dragging')
+        container.classList.remove('drag-over')
+        draggedElement = null
+      }
+    })
+
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      
+      if (draggedElement) {
+        const afterElement = this.getDragAfterElement(container, e.clientY)
+        if (afterElement == null) {
+          container.appendChild(draggedElement)
+        } else {
+          container.insertBefore(draggedElement, afterElement)
+        }
+      }
+    })
+
+    container.addEventListener('dragenter', (e) => {
+      e.preventDefault()
+      if (draggedElement) {
+        container.classList.add('drag-over')
+      }
+    })
+
+    container.addEventListener('dragleave', (e) => {
+      e.preventDefault()
+      if (!container.contains(e.relatedTarget)) {
+        container.classList.remove('drag-over')
+      }
+    })
+
+    container.addEventListener('drop', (e) => {
+      e.preventDefault()
+      container.classList.remove('drag-over')
+      
+      if (draggedElement) {
+        // Update the ranking order
+        const newOrder = Array.from(container.children).map(item => 
+          item.getAttribute('data-stakeholder')
+        )
+        
+        // Update the ranking numbers
+        container.querySelectorAll('.ranking-item').forEach((item, index) => {
+          item.querySelector('.ranking-number').textContent = index + 1
+        })
+        
+        // Store the new ranking
+        const caseId = this.questions[this.currentQuestionIndex]['Case']
+        this.decisionPowerRankings.set(caseId, newOrder)
+      }
+    })
+  }
+
+  setupEthicalComplexityDragAndDrop(container) {
+    let draggedElement = null
+
+    container.addEventListener('dragstart', (e) => {
+      if (e.target.classList.contains('ranking-item')) {
+        draggedElement = e.target
+        e.target.classList.add('dragging')
+        container.classList.add('drag-over')
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/html', e.target.outerHTML)
+      }
+    })
+
+    container.addEventListener('dragend', (e) => {
+      if (e.target.classList.contains('ranking-item')) {
+        e.target.classList.remove('dragging')
+        container.classList.remove('drag-over')
+        draggedElement = null
+      }
+    })
+
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      
+      if (draggedElement) {
+        const afterElement = this.getDragAfterElement(container, e.clientY)
+        if (afterElement == null) {
+          container.appendChild(draggedElement)
+        } else {
+          container.insertBefore(draggedElement, afterElement)
+        }
+      }
+    })
+
+    container.addEventListener('dragenter', (e) => {
+      e.preventDefault()
+      if (draggedElement) {
+        container.classList.add('drag-over')
+      }
+    })
+
+    container.addEventListener('dragleave', (e) => {
+      e.preventDefault()
+      if (!container.contains(e.relatedTarget)) {
+        container.classList.remove('drag-over')
+      }
+    })
+
+    container.addEventListener('drop', (e) => {
+      e.preventDefault()
+      container.classList.remove('drag-over')
+      
+      if (draggedElement) {
+        // Update the ranking order
+        const newOrder = Array.from(container.children).map(item => 
+          item.getAttribute('data-stakeholder')
+        )
+        
+        // Update the ranking numbers
+        container.querySelectorAll('.ranking-item').forEach((item, index) => {
+          item.querySelector('.ranking-number').textContent = index + 1
+        })
+        
+        // Store the new ranking
+        const caseId = this.questions[this.currentQuestionIndex]['Case']
+        this.ethicalComplexityRankings.set(caseId, newOrder)
+      }
+    })
+  }
+
+  setupDragAndDrop(container) {
+    let draggedElement = null
+
+    container.addEventListener('dragstart', (e) => {
+      if (e.target.classList.contains('ranking-item')) {
+        draggedElement = e.target
+        e.target.classList.add('dragging')
+        container.classList.add('drag-over')
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/html', e.target.outerHTML)
+      }
+    })
+
+    container.addEventListener('dragend', (e) => {
+      if (e.target.classList.contains('ranking-item')) {
+        e.target.classList.remove('dragging')
+        container.classList.remove('drag-over')
+        draggedElement = null
+      }
+    })
+
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      
+      if (draggedElement) {
+        const afterElement = this.getDragAfterElement(container, e.clientY)
+        if (afterElement == null) {
+          container.appendChild(draggedElement)
+        } else {
+          container.insertBefore(draggedElement, afterElement)
+        }
+      }
+    })
+
+    container.addEventListener('dragenter', (e) => {
+      e.preventDefault()
+      if (draggedElement) {
+        container.classList.add('drag-over')
+      }
+    })
+
+    container.addEventListener('dragleave', (e) => {
+      e.preventDefault()
+      // Only remove drag-over if we're leaving the container completely
+      if (!container.contains(e.relatedTarget)) {
+        container.classList.remove('drag-over')
+      }
+    })
+
+    container.addEventListener('drop', (e) => {
+      e.preventDefault()
+      container.classList.remove('drag-over')
+      
+      if (draggedElement) {
+        // Update the ranking order
+        const newOrder = Array.from(container.children).map(item => 
+          item.getAttribute('data-stakeholder')
+        )
+        
+        // Update the ranking numbers
+        container.querySelectorAll('.ranking-item').forEach((item, index) => {
+          item.querySelector('.ranking-number').textContent = index + 1
+        })
+        
+        // Store the new ranking
+        const caseId = this.questions[this.currentQuestionIndex]['Case']
+        this.stakeholderRankings.set(caseId, newOrder)
+      }
+    })
+  }
+
+  getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.ranking-item:not(.dragging)')]
+    
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect()
+      const offset = y - box.top - box.height / 2
+      
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child }
+      } else {
+        return closest
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element
   }
 }
 

@@ -43,6 +43,30 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       
+      <div id="ranking-section" class="ranking-section">
+        <h4>Rank stakeholders by level of involvement:</h4>
+        <p class="ranking-instructions">💡 Click and drag the stakeholder items below to reorder them from most involved (top) to least involved (bottom)</p>
+        <div id="ranking-container" class="ranking-container">
+          <!-- Ranking items will be loaded here -->
+        </div>
+      </div>
+      
+      <div id="decision-power-section" class="ranking-section">
+        <h4>Rank stakeholders by decision-making power:</h4>
+        <p class="ranking-instructions">💡 Click and drag the stakeholder items below to reorder them from most power (top) to least power (bottom)</p>
+        <div id="decision-power-container" class="ranking-container">
+          <!-- Ranking items will be loaded here -->
+        </div>
+      </div>
+      
+      <div id="ethical-complexity-section" class="ranking-section">
+        <h4>Rank stakeholders by ethical complexity:</h4>
+        <p class="ranking-instructions">💡 Click and drag the stakeholder items below to reorder them from most complex (top) to least complex (bottom)</p>
+        <div id="ethical-complexity-container" class="ranking-container">
+          <!-- Ethical complexity ranking items will be loaded here -->
+        </div>
+      </div>
+      
       <div id="completion-section" class="completion-section" style="display: none;">
         <h2>Evaluation Complete!</h2>
         <p>Thank you for completing the evaluation.</p>
