@@ -17,26 +17,49 @@ class EvaluationApp {
 
   async loadCSVData() {
     try {
+      console.log('Loading CSV data...')
+      
       // Load overview data
-      const overviewResponse = await fetch('public/data/overview.csv')
+      console.log('Fetching overview data...')
+      const overviewResponse = await fetch('/data/overview.csv')
+      if (!overviewResponse.ok) {
+        throw new Error(`Failed to load overview.csv: ${overviewResponse.status} ${overviewResponse.statusText}`)
+      }
       const overviewText = await overviewResponse.text()
       this.questions = this.parseCSV(overviewText)
+      console.log(`Loaded ${this.questions.length} questions`)
       
       // Load stakeholders data
-      const stakeholdersResponse = await fetch('/public/data/stakeholders.csv')
+      console.log('Fetching stakeholders data...')
+      const stakeholdersResponse = await fetch('/data/stakeholders.csv')
+      if (!stakeholdersResponse.ok) {
+        throw new Error(`Failed to load stakeholders.csv: ${stakeholdersResponse.status} ${stakeholdersResponse.statusText}`)
+      }
       const stakeholdersText = await stakeholdersResponse.text()
       this.stakeholders = this.parseCSV(stakeholdersText)
+      console.log(`Loaded ${this.stakeholders.length} stakeholders`)
       
       // Load concerns data
-      const concernsResponse = await fetch('/public/data/concerns.csv')
+      console.log('Fetching concerns data...')
+      const concernsResponse = await fetch('/data/concerns.csv')
+      if (!concernsResponse.ok) {
+        throw new Error(`Failed to load concerns.csv: ${concernsResponse.status} ${concernsResponse.statusText}`)
+      }
       const concernsText = await concernsResponse.text()
       this.concerns = this.parseCSV(concernsText)
+      console.log(`Loaded ${this.concerns.length} concerns`)
       
       // Load outcomes data
-      const outcomesResponse = await fetch('/public/data/outcomes.csv')
+      console.log('Fetching outcomes data...')
+      const outcomesResponse = await fetch('/data/outcomes.csv')
+      if (!outcomesResponse.ok) {
+        throw new Error(`Failed to load outcomes.csv: ${outcomesResponse.status} ${outcomesResponse.statusText}`)
+      }
       const outcomesText = await outcomesResponse.text()
       this.outcomes = this.parseCSV(outcomesText)
+      console.log(`Loaded ${this.outcomes.length} outcomes`)
       
+      console.log('All CSV data loaded successfully!')
       return true
     } catch (error) {
       console.error('Error loading CSV data:', error)
