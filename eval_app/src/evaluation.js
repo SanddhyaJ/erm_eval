@@ -103,7 +103,7 @@ class EvaluationApp {
     // If odd number of quotes, we need to continue to next lines
     while (quoteCount % 2 !== 0 && currentLine + 1 < lines.length) {
       currentLine++
-      fullRow += '\n' + lines[currentLine]
+      fullRow += '\n\n' + lines[currentLine]
       quoteCount += (lines[currentLine].match(/"/g) || []).length
     }
     
