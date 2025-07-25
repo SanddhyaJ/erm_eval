@@ -13,6 +13,7 @@ class EvaluationApp {
     this.ethicalComplexityLevels = new Map() // Store ethical complexity levels per case
     this.concernsResponses = new Map() // Store concerns responses per case
     this.outcomesResponses = new Map() // Store outcomes responses per case
+    this.outcomeImpacts = new Map() // Store stakeholder impacts for outcomes per case
   }
 
   async loadCSVData() {
@@ -193,12 +194,32 @@ ${summaryText}
     // Get concerns responses for this case
     const concernsResponses = this.concernsResponses.get(caseId) || new Map()
     const concernsData = Array.from(concernsResponses.entries()).map(([concern, response]) => {
-      return `${concern}: ${response.isConcern ? 'Yes' : 'No'}${response.isConcern ? ` (Severity: ${this.getSeverityText(response.severity)})` : ''}`
+      let concernText = `${concern}: ${response.isConcern ? 'Yes' : 'No'}`
+      if (response.isConcern) {
+        concernText += ` (Severity: ${this.getSeverityText(response.severity)})`
+      }
+      if (response.relatedStakeholders && response.relatedStakeholders.size > 0) {
+        const stakeholdersList = Array.from(response.relatedStakeholders).join(', ')
+        concernText += ` [Related stakeholders: ${stakeholdersList}]`
+      }
+      return concernText
     }).join(' | ')
 
     // Get outcomes responses for this case
     const outcomesResponses = this.outcomesResponses.get(caseId) || new Set()
-    const outcomesData = Array.from(outcomesResponses).join(' | ')
+    const outcomeImpacts = this.outcomeImpacts.get(caseId) || new Map()
+    
+    const outcomesData = Array.from(outcomesResponses).map(outcome => {
+      let outcomeText = outcome
+      const impacts = outcomeImpacts.get(outcome)
+      if (impacts && impacts.size > 0) {
+        const impactsList = Array.from(impacts.entries()).map(([stakeholder, impact]) => 
+          `${stakeholder}: ${impact}`
+        ).join(', ')
+        outcomeText += ` [Impact: ${impactsList}]`
+      }
+      return outcomeText
+    }).join(' | ')
 
     // Get additional comments
     const additionalComments = document.getElementById('additional-comments')?.value || ''
@@ -524,6 +545,12 @@ ${summaryText}
     
     // Update the bucket sections visibility and content
     this.renderBucketSections()
+    
+    // Update concerns to show/hide stakeholder relation sections
+    this.renderConcerns()
+    
+    // Update outcomes to show/hide stakeholder impact sections
+    this.renderOutcomes()
     
     // Update side menu to reflect completion status
     this.updateSideMenu()
@@ -888,6 +915,10 @@ ${summaryText}
       concern.Case === caseId
     )
     
+    // Get selected stakeholders for this case
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    const stakeholdersArray = Array.from(selectedStakeholders)
+    
     // Get previously stored concerns responses for this case
     const concernsResponses = this.concernsResponses.get(caseId) || new Map()
     
@@ -900,7 +931,11 @@ ${summaryText}
     
     const concernsHTML = caseConcerns.map((concern, index) => {
       const concernId = `concern-${index}`
-      const response = concernsResponses.get(concern.Description) || { isConcern: null, severity: 1 }
+      const response = concernsResponses.get(concern.Description) || { 
+        isConcern: null, 
+        severity: 1, 
+        relatedStakeholders: new Set() 
+      }
       
       return `
         <div class="concern-item" data-concern="${concern.Description}">
@@ -925,6 +960,21 @@ ${summaryText}
                        ${response.isConcern === false ? 'checked' : ''}>
                 <span>No</span>
               </label>
+            </div>
+          </div>
+          
+          <div class="stakeholder-relation-section ${stakeholdersArray.length === 0 || response.isConcern !== true ? 'hidden' : ''}">
+            <label class="concern-label">Which stakeholders is this concern related to?</label>
+            <div class="concern-stakeholders">
+              ${stakeholdersArray.map(stakeholder => `
+                <label class="stakeholder-relation-option">
+                  <input type="checkbox" 
+                         name="${concernId}-stakeholders" 
+                         value="${stakeholder}"
+                         ${response.relatedStakeholders && response.relatedStakeholders.has(stakeholder) ? 'checked' : ''}>
+                  <span>${stakeholder}</span>
+                </label>
+              `).join('')}
             </div>
           </div>
           
@@ -986,9 +1036,14 @@ ${summaryText}
         const concernDescription = concernItem.dataset.concern
         const isConcern = e.target.value === 'yes'
         const severitySection = concernItem.querySelector('.severity-section')
+        const stakeholderRelationSection = concernItem.querySelector('.stakeholder-relation-section')
         
         // Get existing response or create new one
-        const response = concernsResponses.get(concernDescription) || { isConcern: null, severity: 1 }
+        const response = concernsResponses.get(concernDescription) || { 
+          isConcern: null, 
+          severity: 1, 
+          relatedStakeholders: new Set() 
+        }
         response.isConcern = isConcern
         concernsResponses.set(concernDescription, response)
         
@@ -1001,6 +1056,48 @@ ${summaryText}
         } else {
           severitySection.classList.add('hidden')
         }
+        
+        // Show/hide stakeholder relation section
+        const selectedStakeholders = this.selectedStakeholders.get(this.questions[this.currentQuestionIndex]['Case']) || new Set()
+        if (isConcern && selectedStakeholders.size > 0) {
+          stakeholderRelationSection.classList.remove('hidden')
+        } else {
+          stakeholderRelationSection.classList.add('hidden')
+        }
+      })
+    })
+    
+    // Stakeholder relation checkbox listeners
+    document.querySelectorAll('.stakeholder-relation-option input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const concernItem = e.target.closest('.concern-item')
+        const concernDescription = concernItem.dataset.concern
+        const stakeholder = e.target.value
+        const isChecked = e.target.checked
+        
+        // Get existing response or create new one
+        const response = concernsResponses.get(concernDescription) || { 
+          isConcern: null, 
+          severity: 1, 
+          relatedStakeholders: new Set() 
+        }
+        
+        // Ensure relatedStakeholders is a Set
+        if (!(response.relatedStakeholders instanceof Set)) {
+          response.relatedStakeholders = new Set(response.relatedStakeholders || [])
+        }
+        
+        // Add or remove stakeholder
+        if (isChecked) {
+          response.relatedStakeholders.add(stakeholder)
+        } else {
+          response.relatedStakeholders.delete(stakeholder)
+        }
+        
+        concernsResponses.set(concernDescription, response)
+        
+        // Update side menu to reflect completion status
+        this.updateSideMenu()
       })
     })
     
@@ -1032,8 +1129,15 @@ ${summaryText}
       outcome.Case === caseId
     )
     
+    // Get selected stakeholders for this case
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    const stakeholdersArray = Array.from(selectedStakeholders)
+    
     // Get previously selected outcomes for this case
     const selectedOutcomes = this.outcomesResponses.get(caseId) || new Set()
+    
+    // Get outcome impacts for this case
+    const outcomeImpacts = this.outcomeImpacts.get(caseId) || new Map()
     
     if (caseOutcomes.length === 0) {
       outcomesContainer.style.display = 'none'
@@ -1045,17 +1149,60 @@ ${summaryText}
     const outcomesHTML = caseOutcomes.map((outcome, index) => {
       const outcomeId = `outcome-${index}`
       const isSelected = selectedOutcomes.has(outcome.Outcome)
+      const impacts = outcomeImpacts.get(outcome.Outcome) || new Map()
       
       return `
-        <label class="outcome-option ${isSelected ? 'selected' : ''}">
-          <input type="checkbox" 
-                 name="outcomes" 
-                 value="${outcome.Outcome}" 
-                 id="${outcomeId}"
-                 ${isSelected ? 'checked' : ''}>
-          <span class="outcome-text">${outcome.Outcome}</span>
-          <span class="outcome-checkmark">✓</span>
-        </label>
+        <div class="outcome-item" data-outcome="${outcome.Outcome}">
+          <label class="outcome-option ${isSelected ? 'selected' : ''}">
+            <input type="checkbox" 
+                   name="outcomes" 
+                   value="${outcome.Outcome}" 
+                   id="${outcomeId}"
+                   ${isSelected ? 'checked' : ''}>
+            <span class="outcome-text">${outcome.Outcome}</span>
+            <span class="outcome-checkmark">✓</span>
+          </label>
+          
+          <div class="outcome-impact-section ${stakeholdersArray.length === 0 || !isSelected ? 'hidden' : ''}">
+            <label class="impact-label">What impact does this outcome have on each stakeholder?</label>
+            <div class="stakeholder-impacts">
+              ${stakeholdersArray.map(stakeholder => {
+                const currentImpact = impacts.get(stakeholder) || 'neutral'
+                return `
+                  <div class="stakeholder-impact-item" data-stakeholder="${stakeholder}">
+                    <div class="stakeholder-name">${stakeholder}</div>
+                    <div class="impact-options">
+                      <label class="impact-option ${currentImpact === 'positive' ? 'selected' : ''}">
+                        <input type="radio" 
+                               name="${outcomeId}-${stakeholder.replace(/[^a-zA-Z0-9]/g, '_')}-impact" 
+                               value="positive"
+                               data-stakeholder="${stakeholder}"
+                               ${currentImpact === 'positive' ? 'checked' : ''}>
+                        <span class="impact-positive">Positive</span>
+                      </label>
+                      <label class="impact-option ${currentImpact === 'neutral' ? 'selected' : ''}">
+                        <input type="radio" 
+                               name="${outcomeId}-${stakeholder.replace(/[^a-zA-Z0-9]/g, '_')}-impact" 
+                               value="neutral"
+                               data-stakeholder="${stakeholder}"
+                               ${currentImpact === 'neutral' ? 'checked' : ''}>
+                        <span class="impact-neutral">Neutral</span>
+                      </label>
+                      <label class="impact-option ${currentImpact === 'negative' ? 'selected' : ''}">
+                        <input type="radio" 
+                               name="${outcomeId}-${stakeholder.replace(/[^a-zA-Z0-9]/g, '_')}-impact" 
+                               value="negative"
+                               data-stakeholder="${stakeholder}"
+                               ${currentImpact === 'negative' ? 'checked' : ''}>
+                        <span class="impact-negative">Negative</span>
+                      </label>
+                    </div>
+                  </div>
+                `
+              }).join('')}
+            </div>
+          </div>
+        </div>
       `
     }).join('')
     
@@ -1080,12 +1227,20 @@ ${summaryText}
     }
     const selectedOutcomes = this.outcomesResponses.get(caseId)
     
-    // Checkbox listeners
+    // Get or create outcome impacts for this case
+    if (!this.outcomeImpacts.has(caseId)) {
+      this.outcomeImpacts.set(caseId, new Map())
+    }
+    const outcomeImpacts = this.outcomeImpacts.get(caseId)
+    
+    // Checkbox listeners for outcome selection
     document.querySelectorAll('.outcome-option input[type="checkbox"]').forEach(checkbox => {
       checkbox.addEventListener('change', (e) => {
         const outcome = e.target.value
         const isSelected = e.target.checked
+        const outcomeItem = e.target.closest('.outcome-item')
         const outcomeOption = e.target.closest('.outcome-option')
+        const impactSection = outcomeItem.querySelector('.outcome-impact-section')
         
         if (isSelected) {
           selectedOutcomes.add(outcome)
@@ -1094,6 +1249,44 @@ ${summaryText}
           selectedOutcomes.delete(outcome)
           outcomeOption.classList.remove('selected')
         }
+        
+        // Show/hide impact section
+        const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+        if (isSelected && selectedStakeholders.size > 0) {
+          impactSection.classList.remove('hidden')
+        } else {
+          impactSection.classList.add('hidden')
+        }
+        
+        // Update side menu to reflect completion status
+        this.updateSideMenu()
+      })
+    })
+    
+    // Radio button listeners for impact selection
+    document.querySelectorAll('.impact-option input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const outcomeItem = e.target.closest('.outcome-item')
+        const outcome = outcomeItem.dataset.outcome
+        const stakeholder = e.target.dataset.stakeholder
+        const impact = e.target.value
+        const impactOption = e.target.closest('.impact-option')
+        
+        // Get or create impacts map for this outcome
+        if (!outcomeImpacts.has(outcome)) {
+          outcomeImpacts.set(outcome, new Map())
+        }
+        const impacts = outcomeImpacts.get(outcome)
+        
+        // Store the impact
+        impacts.set(stakeholder, impact)
+        
+        // Update visual selection
+        const stakeholderImpactItem = e.target.closest('.stakeholder-impact-item')
+        stakeholderImpactItem.querySelectorAll('.impact-option').forEach(option => {
+          option.classList.remove('selected')
+        })
+        impactOption.classList.add('selected')
         
         // Update side menu to reflect completion status
         this.updateSideMenu()
