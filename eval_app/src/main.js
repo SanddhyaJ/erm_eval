@@ -39,12 +39,12 @@ document.querySelector('#app').innerHTML = `
       <div id="evaluation-container" class="evaluation-container-panels">
         <h3>Evaluation</h3>
         <div class="evaluation-panels">
-          <div id="stakeholder-assessment-panel" class="evaluation-panel collapsible-panel collapsed">
+          <div id="stakeholder-assessment-panel" class="evaluation-panel collapsible-panel">
             <div class="panel-header" data-panel="stakeholder-assessment">
               <h4>Stakeholder Assessment</h4>
-              <span class="panel-toggle">▶</span>
+              <span class="panel-toggle">▼</span>
             </div>
-            <div class="panel-content" id="stakeholder-assessment-content" style="display: none;">
+            <div class="panel-content" id="stakeholder-assessment-content">
               <!-- Panel content will go here -->
               <div id="stakeholders-section" class="stakeholders-section">
                 <h4>Select stakeholders involved in this case:</h4>
