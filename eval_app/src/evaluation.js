@@ -163,9 +163,8 @@ ${summaryText}
   updateProgress() {
     const progress = ((this.currentQuestionIndex + 1) / this.questions.length) * 100
     document.getElementById('progress').style.width = `${progress}%`
-    const currentCase = this.questions[this.currentQuestionIndex]
     document.getElementById('question-counter').textContent = 
-      `Case ${currentCase['Case']} of ${this.questions.length}`
+      `Case ${this.currentQuestionIndex + 1} of ${this.questions.length}`
   }
 
   updateNavigation() {
@@ -364,10 +363,24 @@ ${summaryText}
           <div class="category-content" id="category-${categoryId}">
             ${cases.map(({ caseData, index }) => {
               const isCurrent = index === this.currentQuestionIndex ? 'current' : ''
+              const isCompleted = this.isCaseCompleted(index)
+              const isInProgress = this.isCaseInProgress(index)
+              
+              let statusClass = ''
+              let statusIcon = ''
+              
+              if (isCompleted) {
+                statusClass = 'completed'
+                statusIcon = '<span class="completion-checkmark">✓</span>'
+              } else if (isInProgress) {
+                statusClass = 'in-progress'
+                statusIcon = '<span class="progress-indicator">●</span>'
+              }
               
               return `
-                <div class="question-nav-item ${isCurrent}" data-question-index="${index}">
+                <div class="question-nav-item ${isCurrent} ${statusClass}" data-question-index="${index}">
                   <span class="question-nav-number">Case ${caseData['Case']}</span>
+                  ${statusIcon}
                 </div>
               `
             }).join('')}
@@ -414,17 +427,42 @@ ${summaryText}
   }
 
   updateSideMenu() {
-    const items = document.querySelectorAll('.question-nav-item')
+    // Update completion status for all cases without re-rendering the entire menu
+    const questionNavItems = document.querySelectorAll('.question-nav-item')
     
-    items.forEach((item, index) => {
-      const itemIndex = parseInt(item.getAttribute('data-question-index'))
+    questionNavItems.forEach((item, index) => {
+      const questionIndex = parseInt(item.getAttribute('data-question-index'))
+      const isCompleted = this.isCaseCompleted(questionIndex)
+      const isInProgress = this.isCaseInProgress(questionIndex)
+      const isCurrent = questionIndex === this.currentQuestionIndex
       
-      // Remove current class from all items
-      item.classList.remove('current')
+      // Remove all status classes
+      item.classList.remove('completed', 'in-progress', 'current')
       
-      // Add current class to active case
-      if (itemIndex === this.currentQuestionIndex) {
+      // Add current class if this is the current case
+      if (isCurrent) {
         item.classList.add('current')
+      }
+      
+      // Remove existing status icons
+      const existingIcon = item.querySelector('.completion-checkmark, .progress-indicator')
+      if (existingIcon) {
+        existingIcon.remove()
+      }
+      
+      // Add appropriate status
+      if (isCompleted) {
+        item.classList.add('completed')
+        const checkmark = document.createElement('span')
+        checkmark.className = 'completion-checkmark'
+        checkmark.textContent = '✓'
+        item.appendChild(checkmark)
+      } else if (isInProgress) {
+        item.classList.add('in-progress')
+        const progressIcon = document.createElement('span')
+        progressIcon.className = 'progress-indicator'
+        progressIcon.textContent = '●'
+        item.appendChild(progressIcon)
       }
     })
   }
@@ -486,6 +524,9 @@ ${summaryText}
     
     // Update the bucket sections visibility and content
     this.renderBucketSections()
+    
+    // Update side menu to reflect completion status
+    this.updateSideMenu()
     this.renderBucketSections()
   }
 
@@ -686,6 +727,9 @@ ${summaryText}
         } else if (type === 'ethical-complexity') {
           this.renderEthicalComplexityBuckets()
         }
+        
+        // Update side menu to reflect completion status
+        this.updateSideMenu()
         
         console.log(`Moved ${stakeholder} to ${level || 'unassigned'} for ${type}`)
       }
@@ -948,6 +992,9 @@ ${summaryText}
         response.isConcern = isConcern
         concernsResponses.set(concernDescription, response)
         
+        // Update side menu to reflect completion status
+        this.updateSideMenu()
+        
         // Show/hide severity section
         if (isConcern) {
           severitySection.classList.remove('hidden')
@@ -1047,6 +1094,9 @@ ${summaryText}
           selectedOutcomes.delete(outcome)
           outcomeOption.classList.remove('selected')
         }
+        
+        // Update side menu to reflect completion status
+        this.updateSideMenu()
       })
     })
   }
@@ -1075,6 +1125,85 @@ ${summaryText}
       if (decisionPowerSection) decisionPowerSection.style.display = 'none'
       if (ethicalComplexitySection) ethicalComplexitySection.style.display = 'none'
     }
+  }
+
+  isCaseCompleted(caseIndex) {
+    const caseData = this.questions[caseIndex]
+    const caseId = caseData['Case']
+    
+    // Check if stakeholders are selected
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    if (selectedStakeholders.size === 0) {
+      return false
+    }
+    
+    // Check if all concerns have been answered
+    const casesConcerns = this.concerns.filter(concern => concern.Case === caseId)
+    const concernsResponses = this.concernsResponses.get(caseId) || new Map()
+    
+    for (const concern of casesConcerns) {
+      if (!concernsResponses.has(concern.Description)) {
+        return false
+      }
+    }
+    
+    // Check if at least one outcome is selected
+    const outcomesResponses = this.outcomesResponses.get(caseId) || new Set()
+    if (outcomesResponses.size === 0) {
+      return false
+    }
+    
+    // Check if stakeholder assessments are complete (at least involvement levels)
+    const stakeholderLevels = this.stakeholderLevels.get(caseId) || {}
+    const selectedStakeholdersArray = Array.from(selectedStakeholders)
+    
+    for (const stakeholder of selectedStakeholdersArray) {
+      if (!stakeholderLevels[stakeholder]) {
+        return false
+      }
+    }
+    
+    return true
+  }
+
+  isCaseInProgress(caseIndex) {
+    const caseData = this.questions[caseIndex]
+    const caseId = caseData['Case']
+    
+    // If already completed, return false (we show completed icon instead)
+    if (this.isCaseCompleted(caseIndex)) {
+      return false
+    }
+    
+    // Check if any progress has been made
+    let hasProgress = false
+    
+    // Check if stakeholders are selected
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    if (selectedStakeholders.size > 0) {
+      hasProgress = true
+    }
+    
+    // Check if any concerns have been answered
+    const casesConcerns = this.concerns.filter(concern => concern.Case === caseId)
+    const concernsResponses = this.concernsResponses.get(caseId) || new Map()
+    if (concernsResponses.size > 0) {
+      hasProgress = true
+    }
+    
+    // Check if any outcomes are selected
+    const outcomesResponses = this.outcomesResponses.get(caseId) || new Set()
+    if (outcomesResponses.size > 0) {
+      hasProgress = true
+    }
+    
+    // Check if any stakeholder assessments have been made
+    const stakeholderLevels = this.stakeholderLevels.get(caseId) || {}
+    if (Object.keys(stakeholderLevels).length > 0) {
+      hasProgress = true
+    }
+    
+    return hasProgress
   }
 }
 
