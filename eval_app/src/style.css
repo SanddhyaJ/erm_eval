@@ -1139,3 +1139,280 @@ header p {
   color: rgba(0, 0, 0, 0.5);
   font-style: italic;
 }
+
+/* Bucket Categorization Styles */
+.bucket-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.buckets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.bucket {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  min-height: 120px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.bucket::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 12px 12px 0 0;
+  transition: all 0.3s ease;
+}
+
+.bucket.bucket-gray::before {
+  background: linear-gradient(90deg, #6b7280, #9ca3af);
+}
+
+.bucket.bucket-green::before {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.bucket.bucket-yellow::before {
+  background: linear-gradient(90deg, #eab308, #fbbf24);
+}
+
+.bucket.bucket-orange::before {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.bucket.bucket-red::before {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.bucket:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.bucket.drag-over {
+  border-color: #646cff;
+  background: rgba(100, 108, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.2);
+  transform: scale(1.02);
+}
+
+.bucket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bucket-header h5 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.bucket-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 24px;
+  text-align: center;
+}
+
+.bucket-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 60px;
+}
+
+.stakeholder-chip {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: grab;
+  transition: all 0.3s ease;
+  user-select: none;
+  text-align: center;
+}
+
+.stakeholder-chip:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stakeholder-chip:active {
+  cursor: grabbing;
+}
+
+.stakeholder-chip.dragging {
+  opacity: 0.7;
+  transform: rotate(3deg) scale(1.05);
+  z-index: 1000;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.unassigned-stakeholders {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.unassigned-stakeholders.drag-over {
+  border-color: #646cff;
+  background: rgba(100, 108, 255, 0.05);
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+}
+
+.unassigned-stakeholders h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.unassigned-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 40px;
+}
+
+/* Color-coded bucket variations */
+.bucket-gray .stakeholder-chip {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.3), rgba(107, 114, 128, 0.1));
+  border-color: rgba(107, 114, 128, 0.4);
+  color: #d1d5db;
+}
+
+.bucket-green .stakeholder-chip {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1));
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.bucket-yellow .stakeholder-chip {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.3), rgba(234, 179, 8, 0.1));
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #fde047;
+}
+
+.bucket-orange .stakeholder-chip {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.3), rgba(249, 115, 22, 0.1));
+  border-color: rgba(249, 115, 22, 0.4);
+  color: #fed7aa;
+}
+
+.bucket-red .stakeholder-chip {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1));
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}  
+  .bucket-container {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .bucket {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  .bucket:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.3);
+  }
+  
+  .bucket-header {
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .bucket-header h5 {
+    color: #213547;
+  }
+  
+  .bucket-count {
+    background: rgba(0, 0, 0, 0.2);
+    color: #213547;
+  }
+  
+  .stakeholder-chip {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #213547;
+  }
+  
+  .stakeholder-chip:hover {
+    background: rgba(0, 0, 0, 0.15);
+    border-color: rgba(0, 0, 0, 0.4);
+  }
+  
+  .unassigned-stakeholders {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  .unassigned-stakeholders h5 {
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  /* Light mode bucket color variations */
+  .bucket-gray .stakeholder-chip {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.2), rgba(107, 114, 128, 0.05));
+    border-color: rgba(107, 114, 128, 0.4);
+    color: #4b5563;
+  }
+
+  .bucket-green .stakeholder-chip {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.05));
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #166534;
+  }
+
+  .bucket-yellow .stakeholder-chip {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
+    border-color: rgba(234, 179, 8, 0.4);
+    color: #a16207;
+  }
+
+  .bucket-orange .stakeholder-chip {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05));
+    border-color: rgba(249, 115, 22, 0.4);
+    color: #c2410c;
+  }
+
+  .bucket-red .stakeholder-chip {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #b91c1c;
+  }

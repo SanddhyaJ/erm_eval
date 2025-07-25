@@ -8,9 +8,9 @@ class EvaluationApp {
     this.responses = []
     this.startTime = new Date()
     this.selectedStakeholders = new Map() // Store selections per case
-    this.stakeholderRankings = new Map() // Store rankings per case
-    this.decisionPowerRankings = new Map() // Store decision power rankings per case
-    this.ethicalComplexityRankings = new Map() // Store ethical complexity rankings per case
+    this.stakeholderLevels = new Map() // Store level of involvement per case
+    this.decisionPowerLevels = new Map() // Store decision power levels per case
+    this.ethicalComplexityLevels = new Map() // Store ethical complexity levels per case
     this.concernsResponses = new Map() // Store concerns responses per case
     this.outcomesResponses = new Map() // Store outcomes responses per case
   }
@@ -157,9 +157,7 @@ ${summaryText}
     this.renderStakeholders()
     this.renderConcerns()
     this.renderOutcomes()
-    this.renderRanking()
-    this.renderDecisionPowerRanking()
-    this.renderEthicalComplexityRanking()
+    this.renderBucketSections()
   }
 
   updateProgress() {
@@ -187,11 +185,11 @@ ${summaryText}
     const caseData = this.questions[this.currentQuestionIndex]
     const caseId = caseData['Case']
     
-    // Get stakeholder selections and rankings
+    // Get stakeholder selections and categorizations
     const selectedStakeholders = Array.from(this.selectedStakeholders.get(caseId) || [])
-    const stakeholderRanking = this.stakeholderRankings.get(caseId) || []
-    const decisionPowerRanking = this.decisionPowerRankings.get(caseId) || []
-    const ethicalComplexityRanking = this.ethicalComplexityRankings.get(caseId) || []
+    const stakeholderLevels = this.stakeholderLevels.get(caseId) || {}
+    const decisionPowerLevels = this.decisionPowerLevels.get(caseId) || {}
+    const ethicalComplexityLevels = this.ethicalComplexityLevels.get(caseId) || {}
 
     // Get concerns responses for this case
     const concernsResponses = this.concernsResponses.get(caseId) || new Map()
@@ -211,9 +209,9 @@ ${summaryText}
       case_title: caseData.Title,
       case_category: caseData['Category'],
       selected_stakeholders: selectedStakeholders,
-      stakeholder_ranking: stakeholderRanking,
-      decision_power_ranking: decisionPowerRanking,
-      ethical_complexity_ranking: ethicalComplexityRanking,
+      stakeholder_involvement_levels: stakeholderLevels,
+      decision_power_levels: decisionPowerLevels,
+      ethical_complexity_levels: ethicalComplexityLevels,
       concerns_data: concernsData,
       outcomes_data: outcomesData,
       additional_comments: additionalComments,
@@ -486,15 +484,14 @@ ${summaryText}
       event.target.closest('.stakeholder-option').classList.remove('selected')
     }
     
-    // Update the ranking display
-    this.renderRanking()
-    this.renderDecisionPowerRanking()
-    this.renderEthicalComplexityRanking()
+    // Update the bucket sections visibility and content
+    this.renderBucketSections()
+    this.renderBucketSections()
   }
 
-  renderRanking() {
+  renderStakeholderBuckets() {
     const caseData = this.questions[this.currentQuestionIndex]
-    const rankingContainer = document.getElementById('ranking-container')
+    const container = document.getElementById('ranking-container')
     const caseId = caseData['Case']
     
     // Get selected stakeholders for this case, or all stakeholders if none selected
@@ -504,49 +501,20 @@ ${summaryText}
     ).map(s => s.Stakeholder)
     
     // Use selected stakeholders, or default to all if none selected
-    const stakeholdersToRank = selectedStakeholders.size > 0 
+    const stakeholdersToAssess = selectedStakeholders.size > 0 
       ? Array.from(selectedStakeholders)
       : caseStakeholders
     
-    // Get existing ranking for this case, or create default order
-    let ranking = this.stakeholderRankings.get(caseId) || stakeholdersToRank.slice()
+    // Get existing levels for this case
+    const existingLevels = this.stakeholderLevels.get(caseId) || {}
     
-    // Ensure ranking includes all current stakeholders and remove any that are no longer selected
-    const updatedRanking = []
-    
-    // First add existing ranked items that are still in stakeholdersToRank
-    ranking.forEach(stakeholder => {
-      if (stakeholdersToRank.includes(stakeholder)) {
-        updatedRanking.push(stakeholder)
-      }
-    })
-    
-    // Then add any new stakeholders that weren't in the previous ranking
-    stakeholdersToRank.forEach(stakeholder => {
-      if (!updatedRanking.includes(stakeholder)) {
-        updatedRanking.push(stakeholder)
-      }
-    })
-    
-    // Update the stored ranking
-    this.stakeholderRankings.set(caseId, updatedRanking)
-    ranking = updatedRanking
-    
-    rankingContainer.innerHTML = ranking.map((stakeholder, index) => `
-      <div class="ranking-item" draggable="true" data-stakeholder="${stakeholder}">
-        <span class="ranking-number">${index + 1}</span>
-        <span class="ranking-stakeholder">${stakeholder}</span>
-        <span class="drag-handle">⋮⋮</span>
-      </div>
-    `).join('')
-
-    // Add drag and drop event listeners
-    this.setupDragAndDrop(rankingContainer)
+    container.innerHTML = this.createBucketHTML(stakeholdersToAssess, existingLevels, 'involvement')
+    this.setupBucketDragAndDrop(container, 'involvement')
   }
 
-  renderDecisionPowerRanking() {
+  renderDecisionPowerBuckets() {
     const caseData = this.questions[this.currentQuestionIndex]
-    const rankingContainer = document.getElementById('decision-power-container')
+    const container = document.getElementById('decision-power-container')
     const caseId = caseData['Case']
     
     // Get selected stakeholders for this case, or all stakeholders if none selected
@@ -556,49 +524,20 @@ ${summaryText}
     ).map(s => s.Stakeholder)
     
     // Use selected stakeholders, or default to all if none selected
-    const stakeholdersToRank = selectedStakeholders.size > 0 
+    const stakeholdersToAssess = selectedStakeholders.size > 0 
       ? Array.from(selectedStakeholders)
       : caseStakeholders
     
-    // Get existing ranking for this case, or create default order
-    let ranking = this.decisionPowerRankings.get(caseId) || stakeholdersToRank.slice()
+    // Get existing levels for this case
+    const existingLevels = this.decisionPowerLevels.get(caseId) || {}
     
-    // Ensure ranking includes all current stakeholders and remove any that are no longer selected
-    const updatedRanking = []
-    
-    // First add existing ranked items that are still in stakeholdersToRank
-    ranking.forEach(stakeholder => {
-      if (stakeholdersToRank.includes(stakeholder)) {
-        updatedRanking.push(stakeholder)
-      }
-    })
-    
-    // Then add any new stakeholders that weren't in the previous ranking
-    stakeholdersToRank.forEach(stakeholder => {
-      if (!updatedRanking.includes(stakeholder)) {
-        updatedRanking.push(stakeholder)
-      }
-    })
-    
-    // Update the stored ranking
-    this.decisionPowerRankings.set(caseId, updatedRanking)
-    ranking = updatedRanking
-    
-    rankingContainer.innerHTML = ranking.map((stakeholder, index) => `
-      <div class="ranking-item" draggable="true" data-stakeholder="${stakeholder}">
-        <span class="ranking-number">${index + 1}</span>
-        <span class="ranking-stakeholder">${stakeholder}</span>
-        <span class="drag-handle">⋮⋮</span>
-      </div>
-    `).join('')
-
-    // Add drag and drop event listeners
-    this.setupDecisionPowerDragAndDrop(rankingContainer)
+    container.innerHTML = this.createBucketHTML(stakeholdersToAssess, existingLevels, 'decision-power')
+    this.setupBucketDragAndDrop(container, 'decision-power')
   }
 
-  renderEthicalComplexityRanking() {
+  renderEthicalComplexityBuckets() {
     const caseData = this.questions[this.currentQuestionIndex]
-    const rankingContainer = document.getElementById('ethical-complexity-container')
+    const container = document.getElementById('ethical-complexity-container')
     const caseId = caseData['Case']
     
     // Get selected stakeholders for this case, or all stakeholders if none selected
@@ -608,44 +547,149 @@ ${summaryText}
     ).map(s => s.Stakeholder)
     
     // Use selected stakeholders, or default to all if none selected
-    const stakeholdersToRank = selectedStakeholders.size > 0 
+    const stakeholdersToAssess = selectedStakeholders.size > 0 
       ? Array.from(selectedStakeholders)
       : caseStakeholders
     
-    // Get existing ranking for this case, or create default order
-    let ranking = this.ethicalComplexityRankings.get(caseId) || stakeholdersToRank.slice()
+    // Get existing levels for this case
+    const existingLevels = this.ethicalComplexityLevels.get(caseId) || {}
     
-    // Ensure ranking includes all current stakeholders and remove any that are no longer selected
-    const updatedRanking = []
-    
-    // First add existing ranked items that are still in stakeholdersToRank
-    ranking.forEach(stakeholder => {
-      if (stakeholdersToRank.includes(stakeholder)) {
-        updatedRanking.push(stakeholder)
-      }
-    })
-    
-    // Then add any new stakeholders that weren't in the previous ranking
-    stakeholdersToRank.forEach(stakeholder => {
-      if (!updatedRanking.includes(stakeholder)) {
-        updatedRanking.push(stakeholder)
-      }
-    })
-    
-    // Update the stored ranking
-    this.ethicalComplexityRankings.set(caseId, updatedRanking)
-    ranking = updatedRanking
-    
-    rankingContainer.innerHTML = ranking.map((stakeholder, index) => `
-      <div class="ranking-item" draggable="true" data-stakeholder="${stakeholder}">
-        <span class="ranking-number">${index + 1}</span>
-        <span class="ranking-stakeholder">${stakeholder}</span>
-        <span class="drag-handle">⋮⋮</span>
-      </div>
-    `).join('')
+    container.innerHTML = this.createBucketHTML(stakeholdersToAssess, existingLevels, 'ethical-complexity')
+    this.setupBucketDragAndDrop(container, 'ethical-complexity')
+  }
 
-    // Add drag and drop event listeners
-    this.setupEthicalComplexityDragAndDrop(rankingContainer)
+  createBucketHTML(stakeholders, existingLevels, type) {
+    const levels = [
+      { key: 'none', label: 'None', color: 'gray' },
+      { key: 'low', label: 'Low', color: 'green' },
+      { key: 'medium', label: 'Medium', color: 'yellow' },
+      { key: 'high', label: 'High', color: 'orange' },
+      { key: 'primary', label: 'Primary', color: 'red' }
+    ]
+
+    return `
+      <div class="buckets-grid">
+        ${levels.map(level => {
+          const stakeholdersInBucket = stakeholders.filter(s => existingLevels[s] === level.key)
+          return `
+            <div class="bucket bucket-${level.color}" data-level="${level.key}" data-type="${type}">
+              <div class="bucket-header">
+                <h5>${level.label}</h5>
+                <span class="bucket-count">${stakeholdersInBucket.length}</span>
+              </div>
+              <div class="bucket-content">
+                ${stakeholdersInBucket.map(stakeholder => `
+                  <div class="stakeholder-chip" draggable="true" data-stakeholder="${stakeholder}">
+                    ${stakeholder}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `
+        }).join('')}
+      </div>
+      <div class="unassigned-stakeholders">
+        <h5>Unassigned Stakeholders</h5>
+        <div class="unassigned-list">
+          ${stakeholders.filter(s => !existingLevels[s]).map(stakeholder => `
+            <div class="stakeholder-chip" draggable="true" data-stakeholder="${stakeholder}">
+              ${stakeholder}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  setupBucketDragAndDrop(container, type) {
+    let draggedElement = null
+
+    // Handle drag start
+    container.addEventListener('dragstart', (e) => {
+      if (e.target.classList.contains('stakeholder-chip')) {
+        draggedElement = e.target
+        e.target.classList.add('dragging')
+        e.dataTransfer.effectAllowed = 'move'
+      }
+    })
+
+    // Handle drag end
+    container.addEventListener('dragend', (e) => {
+      if (e.target.classList.contains('stakeholder-chip')) {
+        e.target.classList.remove('dragging')
+        draggedElement = null
+      }
+    })
+
+    // Handle drag over
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault()
+      const bucket = e.target.closest('.bucket, .unassigned-stakeholders')
+      if (bucket) {
+        bucket.classList.add('drag-over')
+      }
+    })
+
+    // Handle drag leave
+    container.addEventListener('dragleave', (e) => {
+      const bucket = e.target.closest('.bucket, .unassigned-stakeholders')
+      if (bucket && !bucket.contains(e.relatedTarget)) {
+        bucket.classList.remove('drag-over')
+      }
+    })
+
+    // Handle drop
+    container.addEventListener('drop', (e) => {
+      e.preventDefault()
+      const bucket = e.target.closest('.bucket, .unassigned-stakeholders')
+      
+      if (bucket && draggedElement) {
+        bucket.classList.remove('drag-over')
+        
+        const stakeholder = draggedElement.getAttribute('data-stakeholder')
+        const level = bucket.getAttribute('data-level') || null
+        const caseId = this.questions[this.currentQuestionIndex]['Case']
+        
+        // Update the data
+        let levelMap
+        if (type === 'involvement') {
+          levelMap = this.stakeholderLevels.get(caseId) || {}
+          if (level) {
+            levelMap[stakeholder] = level
+          } else {
+            delete levelMap[stakeholder]
+          }
+          this.stakeholderLevels.set(caseId, levelMap)
+        } else if (type === 'decision-power') {
+          levelMap = this.decisionPowerLevels.get(caseId) || {}
+          if (level) {
+            levelMap[stakeholder] = level
+          } else {
+            delete levelMap[stakeholder]
+          }
+          this.decisionPowerLevels.set(caseId, levelMap)
+        } else if (type === 'ethical-complexity') {
+          levelMap = this.ethicalComplexityLevels.get(caseId) || {}
+          if (level) {
+            levelMap[stakeholder] = level
+          } else {
+            delete levelMap[stakeholder]
+          }
+          this.ethicalComplexityLevels.set(caseId, levelMap)
+        }
+        
+        // Re-render the buckets
+        if (type === 'involvement') {
+          this.renderStakeholderBuckets()
+        } else if (type === 'decision-power') {
+          this.renderDecisionPowerBuckets()
+        } else if (type === 'ethical-complexity') {
+          this.renderEthicalComplexityBuckets()
+        }
+        
+        console.log(`Moved ${stakeholder} to ${level || 'unassigned'} for ${type}`)
+      }
+    })
   }
 
   setupDecisionPowerDragAndDrop(container) {
@@ -788,93 +832,6 @@ ${summaryText}
         this.ethicalComplexityRankings.set(caseId, newOrder)
       }
     })
-  }
-
-  setupDragAndDrop(container) {
-    let draggedElement = null
-
-    container.addEventListener('dragstart', (e) => {
-      if (e.target.classList.contains('ranking-item')) {
-        draggedElement = e.target
-        e.target.classList.add('dragging')
-        container.classList.add('drag-over')
-        e.dataTransfer.effectAllowed = 'move'
-        e.dataTransfer.setData('text/html', e.target.outerHTML)
-      }
-    })
-
-    container.addEventListener('dragend', (e) => {
-      if (e.target.classList.contains('ranking-item')) {
-        e.target.classList.remove('dragging')
-        container.classList.remove('drag-over')
-        draggedElement = null
-      }
-    })
-
-    container.addEventListener('dragover', (e) => {
-      e.preventDefault()
-      e.dataTransfer.dropEffect = 'move'
-      
-      if (draggedElement) {
-        const afterElement = this.getDragAfterElement(container, e.clientY)
-        if (afterElement == null) {
-          container.appendChild(draggedElement)
-        } else {
-          container.insertBefore(draggedElement, afterElement)
-        }
-      }
-    })
-
-    container.addEventListener('dragenter', (e) => {
-      e.preventDefault()
-      if (draggedElement) {
-        container.classList.add('drag-over')
-      }
-    })
-
-    container.addEventListener('dragleave', (e) => {
-      e.preventDefault()
-      // Only remove drag-over if we're leaving the container completely
-      if (!container.contains(e.relatedTarget)) {
-        container.classList.remove('drag-over')
-      }
-    })
-
-    container.addEventListener('drop', (e) => {
-      e.preventDefault()
-      container.classList.remove('drag-over')
-      
-      if (draggedElement) {
-        // Update the ranking order
-        const newOrder = Array.from(container.children).map(item => 
-          item.getAttribute('data-stakeholder')
-        )
-        
-        // Update the ranking numbers
-        container.querySelectorAll('.ranking-item').forEach((item, index) => {
-          item.querySelector('.ranking-number').textContent = index + 1
-        })
-        
-        // Store the new ranking
-        const caseId = this.questions[this.currentQuestionIndex]['Case']
-        this.stakeholderRankings.set(caseId, newOrder)
-      }
-    })
-  }
-
-  getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.ranking-item:not(.dragging)')]
-    
-    return draggableElements.reduce((closest, child) => {
-      const box = child.getBoundingClientRect()
-      const offset = y - box.top - box.height / 2
-      
-      if (offset < 0 && offset > closest.offset) {
-        return { offset: offset, element: child }
-      } else {
-        return closest
-      }
-    }, { offset: Number.NEGATIVE_INFINITY }).element
   }
 
   renderConcerns() {
@@ -1092,6 +1049,32 @@ ${summaryText}
         }
       })
     })
+  }
+
+  renderBucketSections() {
+    const caseId = this.questions[this.currentQuestionIndex]['Case']
+    const selectedStakeholders = this.selectedStakeholders.get(caseId) || new Set()
+    
+    // Get the bucket sections
+    const involvementSection = document.getElementById('ranking-section')
+    const decisionPowerSection = document.getElementById('decision-power-section') 
+    const ethicalComplexitySection = document.getElementById('ethical-complexity-section')
+    
+    if (selectedStakeholders.size > 0) {
+      // Show sections and render buckets
+      if (involvementSection) involvementSection.style.display = 'block'
+      if (decisionPowerSection) decisionPowerSection.style.display = 'block'  
+      if (ethicalComplexitySection) ethicalComplexitySection.style.display = 'block'
+      
+      this.renderStakeholderBuckets()
+      this.renderDecisionPowerBuckets()
+      this.renderEthicalComplexityBuckets()
+    } else {
+      // Hide sections when no stakeholders are selected
+      if (involvementSection) involvementSection.style.display = 'none'
+      if (decisionPowerSection) decisionPowerSection.style.display = 'none'
+      if (ethicalComplexitySection) ethicalComplexitySection.style.display = 'none'
+    }
   }
 }
 
