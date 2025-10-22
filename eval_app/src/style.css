@@ -138,6 +138,14 @@ header p {
   margin-bottom: 2rem;
 }
 
+.navigation-bottom {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0 2.5rem 0;
+}
+
 .nav-btn {
   border-radius: 8px;
   border: 1px solid transparent;

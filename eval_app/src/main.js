@@ -30,11 +30,6 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       
-      <div class="navigation">
-        <button id="prev-btn" class="nav-btn" disabled>Previous</button>
-        <span id="question-counter">Case 1 of 1</span>
-        <button id="next-btn" class="nav-btn">Next</button>
-      </div>
       
       <div id="evaluation-container" class="evaluation-container-panels">
         <h3>Evaluation</h3>
@@ -117,6 +112,24 @@ document.querySelector('#app').innerHTML = `
       </div>
     </div>
     
+      <div id="additional-comments-section" class="additional-comments-section">
+        <h4>Additional Comments</h4>
+        <textarea 
+          id="additional-comments" 
+          class="additional-comments-input" 
+          placeholder="Please share any additional thoughts, observations, or comments about this case..."
+          rows="4">
+        </textarea>
+      </div>
+
+      <div class="navigation navigation-bottom">
+        <button id="prev-btn" class="nav-btn" disabled>Previous</button>
+        <span id="question-counter">Case 1 of 1</span>
+        <button id="next-btn" class="nav-btn">Next</button>
+      </div>
+
+    </div>
+
     <div id="completion-section" class="completion-section" style="display: none;">
       <h2>Evaluation Complete!</h2>
       <p>Thank you for completing the evaluation.</p>
